@@ -1,0 +1,672 @@
+{
+	"info": {
+		"name": "Laravel 12 API - Complete Collection",
+		"description": "Complete API collection for Laravel 12 with Authentication, Categories, and Items management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "login"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/logout",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logout"]
+						}
+					}
+				},
+				{
+					"name": "Get User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user"]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Name\",\n    \"email\": \"newemail@example.com\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/update",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "update"]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user/delete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "delete"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "dashboard"]
+						}
+					}
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New User\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"role\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated User Name\",\n    \"email\": \"updated@example.com\",\n    \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Get All Categories (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/categories",
+							"host": ["{{base_url}}"],
+							"path": ["api", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get Category By ID (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/categories/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "categories", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Category (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Electronics\",\n    \"status\": \"published\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/categories",
+							"host": ["{{base_url}}"],
+							"path": ["api", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Update Category (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Category Name\",\n    \"status\": \"unpublished\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/categories/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "categories", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Category (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/categories/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "categories", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Items",
+			"item": [
+				{
+					"name": "Get All Items (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/items",
+							"host": ["{{base_url}}"],
+							"path": ["api", "items"]
+						}
+					}
+				},
+				{
+					"name": "Create Item (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Sample Item",
+									"type": "text"
+								},
+								{
+									"key": "details",
+									"value": "This is a sample item with detailed description",
+									"type": "text"
+								},
+								{
+									"key": "category_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "published",
+									"type": "text"
+								},
+								{
+									"key": "thumbnail",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/items",
+							"host": ["{{base_url}}"],
+							"path": ["api", "items"]
+						}
+					}
+				},
+				{
+					"name": "Create Item Without Thumbnail (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Item Without Image",
+									"type": "text"
+								},
+								{
+									"key": "details",
+									"value": "This item has no thumbnail image",
+									"type": "text"
+								},
+								{
+									"key": "category_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "unpublished",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/items",
+							"host": ["{{base_url}}"],
+							"path": ["api", "items"]
+						}
+					}
+				},
+				{
+					"name": "Update Item (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Updated Item Name",
+									"type": "text"
+								},
+								{
+									"key": "details",
+									"value": "Updated item details",
+									"type": "text"
+								},
+								{
+									"key": "category_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "published",
+									"type": "text"
+								},
+								{
+									"key": "thumbnail",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/items/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "items", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Item Name Only (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Only Name Updated",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/items/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "items", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Item (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/items/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "items", "1"]
+						}
+					}
+				}
+			]
+		}
+		,
+		{
+			"name": "Discounts",
+			"item": [
+				{
+					"name": "Get All Discounts (Public)",
+					"request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/api/discounts", "host": ["{{base_url}}"], "path": ["api","discounts"] } }
+				},
+				{
+					"name": "Get Discount By ID (Public)",
+					"request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/api/discounts/1", "host": ["{{base_url}}"], "path": ["api","discounts","1"] } }
+				},
+				{
+					"name": "Create Discount (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [ {"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"} ],
+						"body": { "mode":"raw","raw":"{\n  \"status\": \"published\",\n  \"code\": \"SAVE10\",\n  \"discount_price\": 10.00\n}" },
+						"url": { "raw": "{{base_url}}/api/discounts", "host": ["{{base_url}}"], "path": ["api","discounts"] }
+					}
+				},
+				{
+					"name": "Update Discount (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [ {"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"} ],
+						"body": { "mode":"raw","raw":"{\n  \"status\": \"unpublished\",\n  \"code\": \"SAVE20\",\n  \"discount_price\": 20.00\n}" },
+						"url": { "raw": "{{base_url}}/api/discounts/1", "host": ["{{base_url}}"], "path": ["api","discounts","1"] }
+					}
+				},
+				{
+					"name": "Delete Discount (Admin)",
+					"request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{admin_token}}"} ], "url": { "raw": "{{base_url}}/api/discounts/1", "host": ["{{base_url}}"], "path": ["api","discounts","1"] } }
+				}
+			]
+		},
+		{
+			"name": "Cities",
+			"item": [
+				{ "name": "Get All Cities (Public)", "request": { "method":"GET","header":[], "url": { "raw":"{{base_url}}/api/cities","host":["{{base_url}}"],"path":["api","cities"] } } },
+				{ "name": "Get City By ID (Public)", "request": { "method":"GET","header":[], "url": { "raw":"{{base_url}}/api/cities/1","host":["{{base_url}}"],"path":["api","cities","1"] } } },
+				{ "name": "Create City (Admin)", "request": { "method":"POST","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Dhaka\",\n  \"status\": \"published\"\n}"}, "url": {"raw":"{{base_url}}/api/cities","host":["{{base_url}}"],"path":["api","cities"]} } },
+				{ "name": "Update City (Admin)", "request": { "method":"PUT","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Chittagong\",\n  \"status\": \"unpublished\"\n}"}, "url": {"raw":"{{base_url}}/api/cities/1","host":["{{base_url}}"],"path":["api","cities","1"]} } },
+				{ "name": "Delete City (Admin)", "request": { "method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": {"raw":"{{base_url}}/api/cities/1","host":["{{base_url}}"],"path":["api","cities","1"]} } }
+			]
+		},
+		{
+			"name": "Delivery Charges",
+			"item": [
+				{ "name": "Get Delivery Charges (Public)", "request": { "method":"GET","header":[], "url": { "raw":"{{base_url}}/api/delivery-charges","host":["{{base_url}}"],"path":["api","delivery-charges"] } } },
+				{ "name": "Get Delivery Charge By ID (Public)", "request": { "method":"GET","header":[], "url": { "raw":"{{base_url}}/api/delivery-charges/1","host":["{{base_url}}"],"path":["api","delivery-charges","1"] } } },
+				{ "name": "Create Delivery Charge (Admin)", "request": { "method":"POST","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"city_id\": 1,\n  \"charge\": 50.00,\n  \"status\": \"published\"\n}"}, "url": {"raw":"{{base_url}}/api/delivery-charges","host":["{{base_url}}"],"path":["api","delivery-charges"]} } },
+				{ "name": "Update Delivery Charge (Admin)", "request": { "method":"PUT","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"city_id\": 1,\n  \"charge\": 60.00,\n  \"status\": \"unpublished\"\n}"}, "url": {"raw":"{{base_url}}/api/delivery-charges/1","host":["{{base_url}}"],"path":["api","delivery-charges","1"]} } },
+				{ "name": "Delete Delivery Charge (Admin)", "request": { "method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": {"raw":"{{base_url}}/api/delivery-charges/1","host":["{{base_url}}"],"path":["api","delivery-charges","1"]} } }
+			]
+		},
+		{
+			"name": "Item Prices",
+			"item": [
+				{ "name": "Create Price (Admin)", "request": { "method":"POST","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 99.99\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices","host":["{{base_url}}"],"path":["api","items","1","prices"]} } },
+				{ "name": "Update Price (Admin)", "request": { "method":"PUT","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 149.99\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices/1","host":["{{base_url}}"],"path":["api","items","1","prices","1"]} } },
+				{ "name": "Delete Price (Admin)", "request": { "method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": {"raw":"{{base_url}}/api/items/1/prices/1","host":["{{base_url}}"],"path":["api","items","1","prices","1"]} } }
+			]
+		},
+		{
+			"name": "MyRestaurant",
+			"item": [
+				{
+					"name": "Create MyRestaurant (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [ {"key":"Authorization","value":"Bearer {{admin_token}}"} ],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key":"isShopOpen","value":"true","type":"text"},
+								{"key":"shop_name","value":"My Shop","type":"text"},
+								{"key":"shop_address","value":"123 Street","type":"text"},
+								{"key":"shop_details","value":"Great foods","type":"text"},
+								{"key":"shop_phone","value":"+123 456-7890","type":"text"},
+								{"key":"tax","value":"5.00","type":"text"},
+								{"key":"delivery_charge","value":"50.00","type":"text"},
+								{"key":"privacy_policy","value":"...","type":"text"},
+								{"key":"terms","value":"...","type":"text"},
+								{"key":"refund_process","value":"...","type":"text"},
+								{"key":"license","value":"AB-123","type":"text"},
+								{"key":"shop_logo","type":"file","src":[]}
+							]
+						},
+						"url": { "raw": "{{base_url}}/api/my-restaurant", "host": ["{{base_url}}"], "path": ["api","my-restaurant"] }
+					}
+				},
+				{
+					"name": "Update MyRestaurant (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [ {"key":"Authorization","value":"Bearer {{admin_token}}"} ],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key":"shop_name","value":"Updated Shop","type":"text"},
+								{"key":"shop_logo","type":"file","src":[]}
+							]
+						},
+						"url": { "raw": "{{base_url}}/api/my-restaurant/1", "host": ["{{base_url}}"], "path": ["api","my-restaurant","1"] }
+					}
+				}
+			]
+		}
+		],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "access_token",
+			"value": ""
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		}
+	]
+}
+

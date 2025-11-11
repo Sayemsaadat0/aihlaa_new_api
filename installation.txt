@@ -1,0 +1,494 @@
+================================================================================
+LARAVEL 12 API PROJECT WITH SANCTUM AUTHENTICATION - INSTALLATION GUIDE
+================================================================================
+
+This guide will help you create a basic Laravel 12 API project with user 
+authentication using Laravel Sanctum.
+
+================================================================================
+PREREQUISITES
+================================================================================
+
+- PHP >= 8.2
+- Composer
+- Database (MySQL, PostgreSQL, SQLite, etc.)
+- Node.js and NPM (optional, for frontend assets)
+
+================================================================================
+STEP 1: CREATE NEW LARAVEL PROJECT
+================================================================================
+
+Command:
+--------
+composer create-project laravel/laravel my-api-backend
+
+Or if you want to specify Laravel 12:
+composer create-project laravel/laravel:^12.0 my-api-backend
+
+Navigate to project directory:
+cd my-api-backend
+
+================================================================================
+STEP 2: CONFIGURE DATABASE
+================================================================================
+
+Edit .env file and set your database configuration:
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database_name
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+
+For SQLite (default in Laravel 12):
+DB_CONNECTION=sqlite
+DB_DATABASE=/absolute/path/to/database.sqlite
+
+Or use the default:
+touch database/database.sqlite
+
+================================================================================
+STEP 3: RUN DATABASE MIGRATIONS
+================================================================================
+
+Command:
+--------
+php artisan migrate
+
+This will create the users, cache, jobs, and other default tables.
+
+================================================================================
+STEP 4: INSTALL LARAVEL SANCTUM
+================================================================================
+
+Command:
+--------
+composer require laravel/sanctum
+
+Publish Sanctum configuration:
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+
+Run Sanctum migrations:
+php artisan migrate
+
+This creates the personal_access_tokens table.
+
+================================================================================
+STEP 5: UPDATE USER MODEL
+================================================================================
+
+File: app/Models/User.php
+
+Add HasApiTokens trait to the User model:
+
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+}
+
+================================================================================
+STEP 6: CREATE API ROUTES FILE
+================================================================================
+
+File: routes/api.php
+
+Create the API routes file with authentication endpoints:
+
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+// Public routes
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+// Protected routes (require authentication)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'user']);
+});
+
+================================================================================
+STEP 7: UPDATE BOOTSTRAP CONFIGURATION
+================================================================================
+
+File: bootstrap/app.php
+
+Add API routes to the routing configuration:
+
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        //
+    })
+    ->withExceptions(function (Exceptions $exceptions): void {
+        //
+    })->create();
+
+================================================================================
+STEP 8: CREATE AUTHENTICATION CONTROLLER
+================================================================================
+
+File: app/Http/Controllers/Api/AuthController.php
+
+Create the authentication controller with register, login, logout, and user methods:
+
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    /**
+     * Register a new user
+     */
+    public function register(Request $request)
+    {
+        // Check if user already exists
+        $existingUser = User::where('email', $request->email)->first();
+        
+        if ($existingUser) {
+            return response()->json([
+                'message' => 'User already exists',
+                'error' => 'A user with this email address already exists.',
+            ], 409);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'User registered successfully',
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ], 201);
+    }
+
+    /**
+     * Login user and create token
+     */
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
+    /**
+     * Logout user (Revoke the token)
+     */
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully',
+        ]);
+    }
+
+    /**
+     * Get authenticated user
+     */
+    public function user(Request $request)
+    {
+        return response()->json([
+            'user' => $request->user(),
+        ]);
+    }
+}
+
+================================================================================
+STEP 9: SANCTUM CONFIGURATION (OPTIONAL)
+================================================================================
+
+File: config/sanctum.php
+
+This file is automatically created when you publish Sanctum assets.
+You can customize token expiration, stateful domains, etc.
+
+Key settings:
+- expiration: null (tokens don't expire by default)
+- stateful: Configure domains for SPA authentication
+- guard: ['web'] (default guard)
+
+================================================================================
+PROJECT FOLDER STRUCTURE
+================================================================================
+
+my-api-backend/
+├── app/
+│   ├── Http/
+│   │   └── Controllers/
+│   │       ├── Api/
+│   │       │   └── AuthController.php      ← Authentication controller
+│   │       └── Controller.php
+│   └── Models/
+│       └── User.php                         ← User model (with HasApiTokens)
+├── bootstrap/
+│   └── app.php                              ← Updated with API routes
+├── config/
+│   └── sanctum.php                          ← Sanctum configuration
+├── database/
+│   ├── migrations/
+│   │   ├── 0001_01_01_000000_create_users_table.php
+│   │   └── 2025_XX_XX_XXXXXX_create_personal_access_tokens_table.php
+│   └── database.sqlite                      ← SQLite database (if using)
+├── routes/
+│   ├── api.php                              ← API routes file
+│   ├── web.php
+│   └── console.php
+├── .env                                     ← Environment configuration
+├── composer.json
+└── artisan
+
+================================================================================
+API ENDPOINTS
+================================================================================
+
+BASE URL: http://localhost:8000/api
+
+PUBLIC ROUTES (No Authentication Required):
+-------------------------------------------
+1. POST /api/register
+   - Register a new user
+   - Body: { "name": "John Doe", "email": "john@example.com", 
+             "password": "password123", "password_confirmation": "password123" }
+   - Returns: User data + access_token
+
+2. POST /api/login
+   - Login user
+   - Body: { "email": "john@example.com", "password": "password123" }
+   - Returns: User data + access_token
+
+PROTECTED ROUTES (Require Bearer Token):
+----------------------------------------
+3. GET /api/user
+   - Get authenticated user info
+   - Header: Authorization: Bearer {token}
+   - Returns: User data
+
+4. POST /api/logout
+   - Logout and revoke token
+   - Header: Authorization: Bearer {token}
+   - Returns: Success message
+
+================================================================================
+TESTING THE API
+================================================================================
+
+Using cURL:
+
+1. Register User:
+curl -X POST http://localhost:8000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com","password":"password123","password_confirmation":"password123"}'
+
+2. Login:
+curl -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"password123"}'
+
+3. Get User (replace YOUR_TOKEN with token from login):
+curl -X GET http://localhost:8000/api/user \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+4. Logout:
+curl -X POST http://localhost:8000/api/logout \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+Using Postman:
+- Set Content-Type: application/json for POST requests
+- Add Authorization header with Bearer token for protected routes
+
+================================================================================
+QUICK START COMMANDS SUMMARY
+================================================================================
+
+# 1. Create project
+composer create-project laravel/laravel my-api-backend
+cd my-api-backend
+
+# 2. Configure database in .env file
+
+# 3. Run migrations
+php artisan migrate
+
+# 4. Install Sanctum
+composer require laravel/sanctum
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+php artisan migrate
+
+# 5. Create files (copy code from above):
+# - Update app/Models/User.php (add HasApiTokens trait)
+# - Create routes/api.php
+# - Update bootstrap/app.php (add API routes)
+# - Create app/Http/Controllers/Api/AuthController.php
+
+# 6. Start server
+php artisan serve
+
+# 7. Test API endpoints
+
+================================================================================
+ADDITIONAL NOTES
+================================================================================
+
+- All API routes are prefixed with /api
+- Tokens are returned on successful registration/login
+- Use the token in Authorization header: Bearer {token}
+- Logout revokes the current token
+- User existence is checked before registration (returns 409 if exists)
+- Password must be at least 8 characters and confirmed
+- Email validation is performed on both register and login
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+1. "Route [api] not found" error:
+   - Make sure bootstrap/app.php includes api routes
+   - Check that routes/api.php exists
+
+2. "Class 'Laravel\Sanctum\HasApiTokens' not found":
+   - Run: composer require laravel/sanctum
+   - Make sure autoload is updated: composer dump-autoload
+
+3. "Unauthenticated" error on protected routes:
+   - Check that Authorization header is set: Bearer {token}
+   - Verify token is valid and not expired
+   - Make sure user() method is called on authenticated request
+
+4. Database connection errors:
+   - Check .env file configuration
+   - Ensure database exists
+   - Run: php artisan config:clear
+
+5. Migration errors:
+   - Run: php artisan migrate:fresh (WARNING: This deletes all data)
+   - Or: php artisan migrate:rollback then php artisan migrate
+
+================================================================================
+NEXT STEPS (OPTIONAL ENHANCEMENTS)
+================================================================================
+
+1. Add API Resources for consistent JSON responses
+2. Create Form Request classes for validation
+3. Add rate limiting to API routes
+4. Implement API versioning (e.g., /api/v1/)
+5. Add email verification
+6. Implement password reset functionality
+7. Add role-based access control (RBAC)
+8. Create API documentation with Swagger/OpenAPI
+9. Add CORS configuration for frontend integration
+10. Implement refresh tokens
+
+================================================================================
+END OF INSTALLATION GUIDE
+================================================================================
+
