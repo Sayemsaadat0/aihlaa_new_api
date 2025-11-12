@@ -11,6 +11,26 @@ use Illuminate\Validation\ValidationException;
 class RestaurantController extends Controller
 {
     /**
+     * Get MyRestaurant (public)
+     */
+    public function show()
+    {
+        try {
+            $restaurant = Restaurant::first();
+            
+            if (!$restaurant) {
+                return $this->notFoundResponse('MyRestaurant');
+            }
+
+            return $this->successResponse([
+                'restaurant' => $this->serialize($restaurant),
+            ], 'MyRestaurant retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve MyRestaurant: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Create MyRestaurant (singleton)
      */
     public function store(Request $request)
@@ -21,12 +41,19 @@ class RestaurantController extends Controller
                 return $this->errorResponse('MyRestaurant already exists', 409);
             }
 
+            // Coerce boolean values before validation
+            $input = $request->all();
+            if (isset($input['isShopOpen'])) {
+                $input['isShopOpen'] = $this->coerceBoolean($input['isShopOpen']);
+            }
+            $request->merge($input);
+
             $request->validate([
                 'privacy_policy' => 'nullable|string',
                 'terms' => 'nullable|string',
                 'refund_process' => 'nullable|string',
                 'license' => 'nullable|string',
-                'isShopOpen' => 'required|boolean',
+                'isShopOpen' => 'nullable|boolean',
                 'shop_name' => 'nullable|string|max:255',
                 'shop_address' => 'nullable|string',
                 'shop_details' => 'nullable|string',
@@ -37,6 +64,11 @@ class RestaurantController extends Controller
             ]);
 
             $data = $this->coerceAndTrim($request);
+            
+            // Set default value for isShopOpen if not provided
+            if (!isset($data['isShopOpen'])) {
+                $data['isShopOpen'] = false;
+            }
 
             if ($request->hasFile('shop_logo')) {
                 $data['shop_logo'] = FileUploadService::uploadToPublicUploads($request->file('shop_logo'));
@@ -64,6 +96,13 @@ class RestaurantController extends Controller
             if (!$restaurant) {
                 return $this->notFoundResponse('MyRestaurant');
             }
+
+            // Coerce boolean values before validation
+            $input = $request->all();
+            if (isset($input['isShopOpen'])) {
+                $input['isShopOpen'] = $this->coerceBoolean($input['isShopOpen']);
+            }
+            $request->merge($input);
 
             $request->validate([
                 'privacy_policy' => 'nullable|string',
@@ -118,7 +157,9 @@ class RestaurantController extends Controller
         // Booleans
         if (!$partial || $request->has('isShopOpen')) {
             $v = $request->input('isShopOpen');
-            if ($v !== null) $data['isShopOpen'] = filter_var($v, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+            if ($v !== null) {
+                $data['isShopOpen'] = $this->coerceBoolean($v);
+            }
         }
         // Numerics
         foreach (['tax','delivery_charge'] as $n) {
@@ -127,6 +168,27 @@ class RestaurantController extends Controller
             if ($v !== null && $v !== '') $data[$n] = round((float)$v, 2);
         }
         return $data;
+    }
+
+    /**
+     * Coerce various boolean representations to actual boolean
+     */
+    private function coerceBoolean($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        
+        if (is_string($value)) {
+            $value = strtolower(trim($value));
+            return in_array($value, ['true', '1', 'yes', 'on'], true);
+        }
+        
+        if (is_numeric($value)) {
+            return (bool) $value;
+        }
+        
+        return (bool) $value;
     }
 
     private function serialize(Restaurant $r): array

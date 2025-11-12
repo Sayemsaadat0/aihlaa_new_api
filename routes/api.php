@@ -47,6 +47,9 @@ Route::get('/cities/{id}', [CityController::class, 'show']);
 Route::get('/delivery-charges', [DeliveryChargeController::class, 'index']);
 Route::get('/delivery-charges/{id}', [DeliveryChargeController::class, 'show']);
 
+// Public restaurant route (GET only)
+Route::get('/my-restaurant', [RestaurantController::class, 'show']);
+
 // Public cart routes (no authentication required)
 Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart', [CartController::class, 'store']);
@@ -100,7 +103,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // MyRestaurant (singleton) - Admin only
     Route::middleware('role:admin')->group(function () {
         Route::post('/my-restaurant', [RestaurantController::class, 'store']);
-        Route::put('/my-restaurant/{id}', [RestaurantController::class, 'update']);
+        Route::match(['put', 'post'], '/my-restaurant/{id}', [RestaurantController::class, 'update']);
+    });
+
+    // Cart management routes (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/carts', [CartController::class, 'getAllCarts']);
     });
     
     // Item management routes (Admin only - require authentication + admin role)

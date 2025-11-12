@@ -601,6 +601,74 @@
 			]
 		},
 		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "Get All Carts (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/carts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "carts"]
+						}
+					}
+				},
+				{
+					"name": "Get Cart (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/cart?guest_id=guest123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart"],
+							"query": [
+								{
+									"key": "guest_id",
+									"value": "guest123",
+									"description": "Use guest_id OR user_id"
+								},
+								{
+									"key": "user_id",
+									"value": "1",
+									"description": "Use guest_id OR user_id",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Cart (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"items\": [\n    {\n      \"item_id\": 1,\n      \"item_price_id\": 1,\n      \"quantity\": 2\n    },\n    {\n      \"item_id\": 2,\n      \"item_price_id\": 3,\n      \"quantity\": 1\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart"]
+						}
+					}
+				}
+			]
+		},
+		{
 			"name": "Item Prices",
 			"item": [
 				{ "name": "Create Price (Admin)", "request": { "method":"POST","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 99.99\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices","host":["{{base_url}}"],"path":["api","items","1","prices"]} } },
@@ -611,6 +679,18 @@
 		{
 			"name": "MyRestaurant",
 			"item": [
+				{
+					"name": "Get MyRestaurant (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/my-restaurant",
+							"host": ["{{base_url}}"],
+							"path": ["api", "my-restaurant"]
+						}
+					}
+				},
 				{
 					"name": "Create MyRestaurant (Admin)",
 					"request": {
@@ -639,7 +719,7 @@
 				{
 					"name": "Update MyRestaurant (Admin)",
 					"request": {
-						"method": "PUT",
+						"method": "POST",
 						"header": [ {"key":"Authorization","value":"Bearer {{admin_token}}"} ],
 						"body": {
 							"mode": "formdata",
