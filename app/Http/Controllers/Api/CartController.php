@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\ItemPrice;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Models\Discount;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -109,11 +110,29 @@ class CartController extends Controller
             // Calculate tax price (percentage of items_price)
             $taxPrice = ($itemsPrice * $taxPercentage) / 100;
 
-            // Calculate payable price
-            $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge;
-
-            // For now, discount amount is 0 (will be calculated later when discount API is integrated)
+            // Calculate discount amount if discount code exists
             $discountAmount = 0;
+            if (!empty($discountCoupon)) {
+                $discount = Discount::where('code', $discountCoupon)
+                    ->where('status', Discount::STATUS_PUBLISHED)
+                    ->first();
+                
+                if ($discount) {
+                    $discountAmount = (float) $discount->discount_price;
+                    // Ensure discount doesn't exceed total (items_price + tax_price + delivery_charge)
+                    $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
+                    if ($discountAmount > $totalBeforeDiscount) {
+                        $discountAmount = $totalBeforeDiscount;
+                    }
+                }
+            }
+
+            // Calculate payable price: items_price + tax + delivery - discount
+            $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge - $discountAmount;
+            // Ensure payable price doesn't go below 0
+            if ($payablePrice < 0) {
+                $payablePrice = 0;
+            }
 
             return $this->successResponse([
                 'guest_id' => $request->input('guest_id', ''),
@@ -269,7 +288,7 @@ class CartController extends Controller
                 'items_price' => round($itemsPrice, 2),
                 'discount' => [
                     'coupon' => '',
-                    'amount' => 0, // Will be calculated when discount API is integrated
+                    'amount' => 0,
                 ],
                 'charges' => [
                     'tax' => round($taxPercentage, 2),
@@ -283,6 +302,574 @@ class CartController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse(
                 'Failed to create cart: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * Update quantity for a specific item in cart (Public API)
+     */
+    public function updateQuantity(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validated = $request->validate([
+                'guest_id' => 'nullable|string|max:255|required_without:user_id',
+                'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
+                'item_id' => 'required|integer|exists:items,id',
+                'item_price_id' => 'nullable|integer|exists:item_prices,id',
+                'quantity' => 'required|integer|min:0|max:999',
+            ]);
+
+            $userId = $validated['user_id'] ?? null;
+            $guestId = $validated['guest_id'] ?? null;
+            $itemId = $validated['item_id'];
+            $priceId = $validated['item_price_id'] ?? null;
+            $newQuantity = (int) $validated['quantity'];
+
+            // Validate that user exists if user_id is provided
+            if ($userId) {
+                $user = User::find($userId);
+                if (!$user) {
+                    return $this->errorResponse(
+                        'User does not exist',
+                        404
+                    );
+                }
+            }
+
+            // Validate that item exists
+            $item = Item::find($itemId);
+            if (!$item) {
+                return $this->errorResponse(
+                    "Item with ID {$itemId} does not exist",
+                    404
+                );
+            }
+
+            // Build base query to find existing cart entries for this item
+            $baseCartQuery = Cart::where('item_id', $itemId);
+
+            if ($userId) {
+                $baseCartQuery->where('user_id', $userId)
+                    ->whereNull('guest_id');
+            } else {
+                $baseCartQuery->where('guest_id', $guestId)
+                    ->whereNull('user_id');
+            }
+
+            // If price_id is not provided, try to auto-detect it
+            if (!$priceId) {
+                $existingCartsForItem = $baseCartQuery->get();
+                
+                if ($existingCartsForItem->isEmpty()) {
+                    // Item not in cart - get the first/default price for this item
+                    $defaultPrice = ItemPrice::where('item_id', $itemId)->first();
+                    if (!$defaultPrice) {
+                        return $this->errorResponse(
+                            "Item with ID {$itemId} has no prices available",
+                            404
+                        );
+                    }
+                    $priceId = $defaultPrice->id;
+                } else {
+                    // Item exists in cart - check how many different prices
+                    $uniquePriceIds = $existingCartsForItem->pluck('price_id')->unique();
+                    
+                    if ($uniquePriceIds->count() > 1) {
+                        // Multiple price variants in cart - need to specify which one
+                        return $this->errorResponse(
+                            "Item with ID {$itemId} has multiple price variants in cart. Please specify 'item_price_id'. Available price IDs: " . $uniquePriceIds->implode(', '),
+                            422
+                        );
+                    }
+                    
+                    // Only one price variant - use it
+                    $priceId = $uniquePriceIds->first();
+                }
+            }
+
+            // Validate that price exists and belongs to the item
+            $price = ItemPrice::where('id', $priceId)
+                ->where('item_id', $itemId)
+                ->first();
+
+            if (!$price) {
+                return $this->errorResponse(
+                    "Price with ID {$priceId} does not belong to item with ID {$itemId}",
+                    422
+                );
+            }
+
+            // Build query to find existing cart entries for this specific item and price
+            $cartQuery = $baseCartQuery->where('price_id', $priceId);
+            $existingCarts = $cartQuery->get();
+            $currentQuantity = $existingCarts->count();
+
+            // If quantity is 0, remove all cart entries for this item
+            if ($newQuantity === 0) {
+                if ($existingCarts->isEmpty()) {
+                    return $this->errorResponse(
+                        'Item not found in cart',
+                        404
+                    );
+                }
+
+                // Delete all cart entries
+                $cartQuery->delete();
+
+                // Return updated cart summary
+                return $this->getUpdatedCartSummary($userId, $guestId, 'Item quantity updated successfully (item removed from cart)');
+            }
+
+            // If item doesn't exist in cart and quantity > 0, add it
+            if ($existingCarts->isEmpty()) {
+                // Create new cart entries
+                $priceValue = (float) $price->price;
+                for ($i = 0; $i < $newQuantity; $i++) {
+                    Cart::create([
+                        'guest_id' => $guestId,
+                        'user_id' => $userId,
+                        'item_id' => $itemId,
+                        'price_id' => $priceId,
+                        'discount_coupon' => null,
+                        'payable_price' => $priceValue,
+                    ]);
+                }
+
+                // Return updated cart summary
+                return $this->getUpdatedCartSummary($userId, $guestId, 'Item added to cart successfully');
+            }
+
+            // Item exists in cart, update quantity
+            if ($newQuantity > $currentQuantity) {
+                // Need to add more entries
+                $priceValue = (float) $price->price;
+                $entriesToAdd = $newQuantity - $currentQuantity;
+                for ($i = 0; $i < $entriesToAdd; $i++) {
+                    Cart::create([
+                        'guest_id' => $guestId,
+                        'user_id' => $userId,
+                        'item_id' => $itemId,
+                        'price_id' => $priceId,
+                        'discount_coupon' => null,
+                        'payable_price' => $priceValue,
+                    ]);
+                }
+            } elseif ($newQuantity < $currentQuantity) {
+                // Need to remove some entries
+                $entriesToRemove = $currentQuantity - $newQuantity;
+                $cartsToDelete = $existingCarts->take($entriesToRemove);
+                foreach ($cartsToDelete as $cart) {
+                    $cart->delete();
+                }
+            }
+            // If newQuantity === currentQuantity, no changes needed
+
+            // Return updated cart summary
+            return $this->getUpdatedCartSummary($userId, $guestId, 'Item quantity updated successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to update cart item quantity: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * Delete an item completely from cart (Public API)
+     */
+    public function deleteItem(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validated = $request->validate([
+                'guest_id' => 'nullable|string|max:255|required_without:user_id',
+                'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
+                'item_id' => 'required|integer|exists:items,id',
+                'item_price_id' => 'nullable|integer|exists:item_prices,id',
+            ]);
+
+            $userId = $validated['user_id'] ?? null;
+            $guestId = $validated['guest_id'] ?? null;
+            $itemId = $validated['item_id'];
+            $priceId = $validated['item_price_id'] ?? null;
+
+            // Validate that user exists if user_id is provided
+            if ($userId) {
+                $user = User::find($userId);
+                if (!$user) {
+                    return $this->errorResponse(
+                        'User does not exist',
+                        404
+                    );
+                }
+            }
+
+            // Validate that item exists
+            $item = Item::find($itemId);
+            if (!$item) {
+                return $this->errorResponse(
+                    "Item with ID {$itemId} does not exist",
+                    404
+                );
+            }
+
+            // Build base query to find existing cart entries for this item
+            $baseCartQuery = Cart::where('item_id', $itemId);
+
+            if ($userId) {
+                $baseCartQuery->where('user_id', $userId)
+                    ->whereNull('guest_id');
+            } else {
+                $baseCartQuery->where('guest_id', $guestId)
+                    ->whereNull('user_id');
+            }
+
+            // If price_id is not provided, try to auto-detect it
+            if (!$priceId) {
+                $existingCartsForItem = $baseCartQuery->get();
+                
+                if ($existingCartsForItem->isEmpty()) {
+                    return $this->errorResponse(
+                        'Item not found in cart',
+                        404
+                    );
+                }
+
+                // Check how many different prices
+                $uniquePriceIds = $existingCartsForItem->pluck('price_id')->unique();
+                
+                if ($uniquePriceIds->count() > 1) {
+                    // Multiple price variants in cart - need to specify which one
+                    return $this->errorResponse(
+                        "Item with ID {$itemId} has multiple price variants in cart. Please specify 'item_price_id' to delete a specific variant. Available price IDs: " . $uniquePriceIds->implode(', '),
+                        422
+                    );
+                }
+                
+                // Only one price variant - use it
+                $priceId = $uniquePriceIds->first();
+            } else {
+                // Validate that price exists and belongs to the item
+                $price = ItemPrice::where('id', $priceId)
+                    ->where('item_id', $itemId)
+                    ->first();
+
+                if (!$price) {
+                    return $this->errorResponse(
+                        "Price with ID {$priceId} does not belong to item with ID {$itemId}",
+                        422
+                    );
+                }
+            }
+
+            // Build query to find existing cart entries for this specific item and price
+            $cartQuery = $baseCartQuery->where('price_id', $priceId);
+            $existingCarts = $cartQuery->get();
+
+            if ($existingCarts->isEmpty()) {
+                return $this->errorResponse(
+                    'Item not found in cart',
+                    404
+                );
+            }
+
+            // Delete all cart entries for this item and price
+            $deletedCount = $cartQuery->delete();
+
+            // Return updated cart summary
+            return $this->getUpdatedCartSummary($userId, $guestId, 'Item removed from cart successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to delete item from cart: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * Apply discount code to cart (Public API)
+     */
+    public function applyDiscount(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validated = $request->validate([
+                'guest_id' => 'nullable|string|max:255|required_without:user_id',
+                'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
+                'code' => 'required|string|max:255',
+            ]);
+
+            $userId = $validated['user_id'] ?? null;
+            $guestId = $validated['guest_id'] ?? null;
+            $code = trim($validated['code']);
+
+            // Validate that user exists if user_id is provided
+            if ($userId) {
+                $user = User::find($userId);
+                if (!$user) {
+                    return $this->errorResponse(
+                        'User does not exist',
+                        404
+                    );
+                }
+            }
+
+            // Find discount by code
+            $discount = Discount::where('code', $code)
+                ->where('status', Discount::STATUS_PUBLISHED)
+                ->first();
+
+            if (!$discount) {
+                return $this->errorResponse(
+                    'Invalid or inactive discount code',
+                    404
+                );
+            }
+
+            // Build query to find cart entries
+            $cartQuery = Cart::where(function ($query) use ($userId, $guestId) {
+                if ($userId) {
+                    $query->where('user_id', $userId)
+                        ->whereNull('guest_id');
+                } else {
+                    $query->where('guest_id', $guestId)
+                        ->whereNull('user_id');
+                }
+            });
+
+            $carts = $cartQuery->get();
+
+            if ($carts->isEmpty()) {
+                return $this->errorResponse(
+                    'Cart is empty. Please add items to cart first.',
+                    404
+                );
+            }
+
+            // Update all cart entries with the discount coupon
+            $cartQuery->update([
+                'discount_coupon' => $code,
+            ]);
+
+            // Return updated cart summary with discount applied
+            return $this->getUpdatedCartSummary($userId, $guestId, 'Discount code applied successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to apply discount code: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * Remove discount from cart (Public API)
+     */
+    public function removeDiscount(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validated = $request->validate([
+                'guest_id' => 'nullable|string|max:255|required_without:user_id',
+                'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
+            ]);
+
+            $userId = $validated['user_id'] ?? null;
+            $guestId = $validated['guest_id'] ?? null;
+
+            // Validate that user exists if user_id is provided
+            if ($userId) {
+                $user = User::find($userId);
+                if (!$user) {
+                    return $this->errorResponse(
+                        'User does not exist',
+                        404
+                    );
+                }
+            }
+
+            // Build query to find cart entries
+            $cartQuery = Cart::where(function ($query) use ($userId, $guestId) {
+                if ($userId) {
+                    $query->where('user_id', $userId)
+                        ->whereNull('guest_id');
+                } else {
+                    $query->where('guest_id', $guestId)
+                        ->whereNull('user_id');
+                }
+            });
+
+            $carts = $cartQuery->get();
+
+            if ($carts->isEmpty()) {
+                return $this->errorResponse(
+                    'Cart is empty',
+                    404
+                );
+            }
+
+            // Remove discount coupon from all cart entries
+            $cartQuery->update([
+                'discount_coupon' => null,
+            ]);
+
+            // Return updated cart summary without discount
+            return $this->getUpdatedCartSummary($userId, $guestId, 'Discount code removed successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to remove discount code: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * Get updated cart summary after quantity update
+     * 
+     * @param int|null $userId
+     * @param string|null $guestId
+     * @param string $message
+     * @return JsonResponse
+     */
+    private function getUpdatedCartSummary($userId, $guestId, $message)
+    {
+        try {
+            $query = Cart::with(['item', 'price']);
+
+            if ($userId) {
+                $query->where('user_id', $userId);
+            }
+
+            if ($guestId) {
+                $query->where('guest_id', $guestId);
+            }
+
+            $carts = $query->get();
+
+            if ($carts->isEmpty()) {
+                // Get restaurant data for tax percentage
+                $restaurant = Restaurant::first();
+                $taxPercentage = $restaurant ? (float) $restaurant->tax : 0;
+                $deliveryCharge = $restaurant ? (float) $restaurant->delivery_charge : 0;
+                
+                return $this->successResponse([
+                    'guest_id' => $guestId ?? '',
+                    'user_id' => $userId ?? '',
+                    'items' => [],
+                    'items_price' => 0,
+                    'discount' => [
+                        'coupon' => '',
+                        'amount' => 0,
+                    ],
+                    'charges' => [
+                        'tax' => round($taxPercentage, 2),
+                        'tax_price' => 0,
+                        'delivery_charges' => round($deliveryCharge, 2),
+                    ],
+                    'payable_price' => 0,
+                ], $message);
+            }
+
+            // Group items by item_id and price_id to calculate quantity
+            $groupedItems = [];
+            foreach ($carts as $cart) {
+                $key = $cart->item_id . '_' . $cart->price_id;
+                if (!isset($groupedItems[$key])) {
+                    $groupedItems[$key] = [
+                        'item' => $cart->item,
+                        'price' => $cart->price,
+                        'quantity' => 0,
+                    ];
+                }
+                $groupedItems[$key]['quantity']++;
+            }
+
+            // Build items array
+            $items = [];
+            $itemsPrice = 0;
+            $discountCoupon = $carts->first()->discount_coupon ?? '';
+
+            foreach ($groupedItems as $group) {
+                $item = $group['item'];
+                $price = $group['price'];
+                
+                if ($item && $price) {
+                    $itemPrice = (float) $price->price;
+                    $itemsPrice += $itemPrice * $group['quantity'];
+                    
+                    $items[] = [
+                        'id' => $item->id,
+                        'title' => $item->name,
+                        'quantity' => $group['quantity'],
+                        'price' => [
+                            'id' => $price->id,
+                            'price' => $itemPrice,
+                        ],
+                    ];
+                }
+            }
+
+            // Get restaurant data for tax and delivery_charge
+            $restaurant = Restaurant::first();
+            $taxPercentage = $restaurant ? (float) $restaurant->tax : 0;
+            $deliveryCharge = $restaurant ? (float) $restaurant->delivery_charge : 0;
+
+            // Calculate tax price (percentage of items_price)
+            $taxPrice = ($itemsPrice * $taxPercentage) / 100;
+
+            // Calculate discount amount if discount code exists
+            $discountAmount = 0;
+            if (!empty($discountCoupon)) {
+                $discount = Discount::where('code', $discountCoupon)
+                    ->where('status', Discount::STATUS_PUBLISHED)
+                    ->first();
+                
+                if ($discount) {
+                    $discountAmount = (float) $discount->discount_price;
+                    // Ensure discount doesn't exceed total (items_price + tax_price + delivery_charge)
+                    $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
+                    if ($discountAmount > $totalBeforeDiscount) {
+                        $discountAmount = $totalBeforeDiscount;
+                    }
+                }
+            }
+
+            // Calculate payable price: items_price + tax + delivery - discount
+            $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge - $discountAmount;
+            // Ensure payable price doesn't go below 0
+            if ($payablePrice < 0) {
+                $payablePrice = 0;
+            }
+
+            return $this->successResponse([
+                'guest_id' => $guestId ?? '',
+                'user_id' => $userId ?? '',
+                'items' => $items,
+                'items_price' => round($itemsPrice, 2),
+                'discount' => [
+                    'coupon' => $discountCoupon,
+                    'amount' => round($discountAmount, 2),
+                ],
+                'charges' => [
+                    'tax' => round($taxPercentage, 2),
+                    'tax_price' => round($taxPrice, 2),
+                    'delivery_charges' => round($deliveryCharge, 2),
+                ],
+                'payable_price' => round($payablePrice, 2),
+            ], $message);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to retrieve updated cart: ' . $e->getMessage(),
                 500
             );
         }

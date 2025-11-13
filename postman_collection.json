@@ -541,10 +541,47 @@
 							"path": ["api", "items", "1"]
 						}
 					}
+				},
+				{
+					"name": "Get Items By Category (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/items/by-category",
+							"host": ["{{base_url}}"],
+							"path": ["api", "items", "by-category"],
+							"query": [
+								{
+									"key": "category_id",
+									"value": "1",
+									"description": "Optional: Filter by specific category ID",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "published",
+									"description": "Optional: Filter categories by status (published/unpublished)",
+									"disabled": true
+								},
+								{
+									"key": "item_status",
+									"value": "published",
+									"description": "Optional: Filter items by status (published/unpublished)",
+									"disabled": true
+								},
+								{
+									"key": "available_only",
+									"value": "true",
+									"description": "Optional: If true, only return published items",
+									"disabled": true
+								}
+							]
+						}
+					}
 				}
 			]
-		}
-		,
+		},
 		{
 			"name": "Discounts",
 			"item": [
@@ -663,6 +700,284 @@
 							"raw": "{{base_url}}/api/cart",
 							"host": ["{{base_url}}"],
 							"path": ["api", "cart"]
+						}
+					}
+				},
+				{
+					"name": "Update Item Quantity (Public)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"item_id\": 1,\n  \"item_price_id\": 1,\n  \"quantity\": 5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/update-quantity",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "update-quantity"]
+						},
+						"description": "Update quantity for a specific item in cart. item_price_id is optional if item has only one price variant."
+					}
+				},
+				{
+					"name": "Update Item Quantity - Guest (Public)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1,\n  \"quantity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/update-quantity",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "update-quantity"]
+						},
+						"description": "Update quantity without price_id (auto-detected). Set quantity to 0 to remove item."
+					}
+				},
+				{
+					"name": "Delete Item From Cart (Public)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"item_id\": 1,\n  \"item_price_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/item",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "item"]
+						},
+						"description": "Delete an item completely from cart. item_price_id is optional if item has only one price variant."
+					}
+				},
+				{
+					"name": "Delete Item From Cart - Guest (Public)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/item",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "item"]
+						},
+						"description": "Delete item without price_id (auto-detected if only one variant exists)."
+					}
+				},
+				{
+					"name": "Apply Discount Code (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"code\": \"SAVE10\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/apply-discount",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "apply-discount"]
+						},
+						"description": "Apply discount code to cart. Updates all cart entries with the discount coupon and recalculates payable price."
+					}
+				},
+				{
+					"name": "Apply Discount Code - Guest (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"code\": \"SAVE10\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/apply-discount",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "apply-discount"]
+						},
+						"description": "Apply discount code to guest cart."
+					}
+				},
+				{
+					"name": "Remove Discount Code (Public)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/remove-discount",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "remove-discount"]
+						},
+						"description": "Remove discount code from cart and recalculate prices."
+					}
+				},
+				{
+					"name": "Remove Discount Code - Guest (Public)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"guest_id\": \"guest123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart/remove-discount",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", "remove-discount"]
+						},
+						"description": "Remove discount code from guest cart."
+					}
+				}
+			]
+		},
+		{
+			"name": "Contact",
+			"item": [
+				{
+					"name": "Submit Contact (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+1-555-1234\",\n  \"subject\": \"Support request\",\n  \"message\": \"I need help with my order.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contact",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contact"]
+						}
+					}
+				},
+				{
+					"name": "Get Contacts (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contact",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contact"]
+						}
+					}
+				},
+				{
+					"name": "Get Contact By ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contact/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contact", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Contact (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"resolved\",\n  \"admin_notes\": \"Issue addressed via phone call.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contact/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contact", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Contact (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contact/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contact", "1"]
 						}
 					}
 				}

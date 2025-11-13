@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DiscountController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\DeliveryChargeController;
 use App\Http\Controllers\Api\RestaurantController;
+use App\Http\Controllers\Api\ContactController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +35,7 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
 // Public item routes (GET only)
 Route::get('/items', [ItemController::class, 'index']);
+Route::get('/items/by-category', [ItemController::class, 'getItemsByCategory']);
 
 // Public discount routes (GET only)
 Route::get('/discounts', [DiscountController::class, 'index']);
@@ -53,6 +55,13 @@ Route::get('/my-restaurant', [RestaurantController::class, 'show']);
 // Public cart routes (no authentication required)
 Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart', [CartController::class, 'store']);
+Route::put('/cart/update-quantity', [CartController::class, 'updateQuantity']);
+Route::delete('/cart/item', [CartController::class, 'deleteItem']);
+Route::post('/cart/apply-discount', [CartController::class, 'applyDiscount']);
+Route::delete('/cart/remove-discount', [CartController::class, 'removeDiscount']);
+
+// Public contact route (POST only)
+Route::post('/contact', [ContactController::class, 'store']);
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
@@ -121,6 +130,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/items/{itemId}/prices', [PriceController::class, 'store']);
         Route::put('/items/{itemId}/prices/{priceId}', [PriceController::class, 'update']);
         Route::delete('/items/{itemId}/prices/{priceId}', [PriceController::class, 'destroy']);
+    });
+
+    // Contact management routes (Admin only - require authentication + admin role)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/contact', [ContactController::class, 'index']);
+        Route::get('/contact/{id}', [ContactController::class, 'show']);
+        Route::put('/contact/{id}', [ContactController::class, 'update']);
+        Route::delete('/contact/{id}', [ContactController::class, 'destroy']);
     });
 });
 

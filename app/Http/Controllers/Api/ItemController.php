@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Item;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
@@ -278,6 +279,115 @@ class ItemController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse(
                 'Failed to delete item: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * Get items grouped by category (Public API)
+     * 
+     * Query Parameters:
+     * - category_id (optional): Filter by specific category ID
+     * - status (optional): Filter categories by status (published/unpublished)
+     * - item_status (optional): Filter items by status (published/unpublished)
+     * - available_only (optional): If true, only return published items (default: false)
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getItemsByCategory(Request $request)
+    {
+        try {
+            // Validate query parameters
+            $validated = $request->validate([
+                'category_id' => 'sometimes|integer|exists:categories,id',
+                'status' => 'sometimes|in:published,unpublished',
+                'item_status' => 'sometimes|in:published,unpublished',
+                'available_only' => 'sometimes|string|in:true,false,1,0',
+            ]);
+
+            // Convert string boolean to actual boolean
+            if (isset($validated['available_only'])) {
+                $validated['available_only'] = in_array($validated['available_only'], ['true', '1', 1], true);
+            }
+
+            // Build category query
+            $categoryQuery = Category::query();
+
+            // Filter by category status if provided
+            if (isset($validated['status'])) {
+                $categoryQuery->where('status', $validated['status']);
+            } else {
+                // By default, only show published categories
+                $categoryQuery->where('status', Category::STATUS_PUBLISHED);
+            }
+
+            // Filter by specific category ID if provided
+            if (isset($validated['category_id'])) {
+                $categoryQuery->where('id', $validated['category_id']);
+            }
+
+            // Get categories with their items
+            $categories = $categoryQuery->with(['items' => function ($query) use ($validated) {
+                // Eager load prices for items
+                $query->with('prices');
+
+                // Filter items by status if provided
+                if (isset($validated['item_status'])) {
+                    $query->where('status', $validated['item_status']);
+                } elseif (isset($validated['available_only']) && $validated['available_only']) {
+                    // If available_only is true, only show published items
+                    $query->where('status', Item::STATUS_PUBLISHED);
+                } else {
+                    // By default, only show published items
+                    $query->where('status', Item::STATUS_PUBLISHED);
+                }
+
+                // Order items by id (you can change this to any field)
+                $query->orderBy('id', 'asc');
+            }])->orderBy('id', 'asc')->get();
+
+            // Transform data to match the requested structure
+            $result = $categories->map(function ($category) {
+                // Filter out categories with no items
+                if ($category->items->isEmpty()) {
+                    return null;
+                }
+
+                return [
+                    'id' => $category->id,
+                    'categoryName' => $category->name,
+                    'description' => null, // Category description field doesn't exist in DB
+                    'items' => $category->items->map(function ($item) {
+                        // Get the first price (or null if no prices)
+                        $firstPrice = $item->prices->first();
+                        $price = $firstPrice ? (float) $firstPrice->price : null;
+
+                        return [
+                            'id' => $item->id,
+                            'name' => $item->name,
+                            'price' => $price,
+                            'thumbnail' => $this->getThumbnailUrl($item->thumbnail),
+                            'description' => $item->details,
+                            'isAvailable' => $item->status === Item::STATUS_PUBLISHED,
+                        ];
+                    })->values(), // Reset array keys
+                ];
+            })->filter(function ($category) {
+                // Remove null entries (categories with no items)
+                return $category !== null;
+            })->values(); // Reset array keys
+
+            return $this->successResponse([
+                'categories' => $result,
+                'total' => $result->count(),
+            ], 'Items retrieved successfully by category');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to retrieve items by category: ' . $e->getMessage(),
                 500
             );
         }
