@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\DeliveryChargeController;
 use App\Http\Controllers\Api\RestaurantController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\AddressController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,9 @@ Route::delete('/cart/remove-discount', [CartController::class, 'removeDiscount']
 
 // Public contact route (POST only)
 Route::post('/contact', [ContactController::class, 'store']);
+
+// Public address route (POST only)
+Route::post('/addresses', [AddressController::class, 'store']);
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
@@ -138,6 +142,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/contact/{id}', [ContactController::class, 'show']);
         Route::put('/contact/{id}', [ContactController::class, 'update']);
         Route::delete('/contact/{id}', [ContactController::class, 'destroy']);
+    });
+
+    // Address management routes (Admin only - require authentication + admin role)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/addresses', [AddressController::class, 'index']);
+        Route::get('/addresses/{id}', [AddressController::class, 'show']);
+        Route::put('/addresses/{id}', [AddressController::class, 'update']);
+        Route::delete('/addresses/{id}', [AddressController::class, 'destroy']);
     });
 });
 

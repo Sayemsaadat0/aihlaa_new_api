@@ -722,7 +722,7 @@
 							"host": ["{{base_url}}"],
 							"path": ["api", "cart", "update-quantity"]
 						},
-						"description": "Update quantity for a specific item in cart. item_price_id is optional if item has only one price variant."
+						"description": "Update quantity for a specific item in cart. item_price_id is required to identify the exact item variant."
 					}
 				},
 				{
@@ -737,14 +737,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1,\n  \"quantity\": 3\n}"
+							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1,\n  \"item_price_id\": 1,\n  \"quantity\": 3\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/cart/update-quantity",
 							"host": ["{{base_url}}"],
 							"path": ["api", "cart", "update-quantity"]
 						},
-						"description": "Update quantity without price_id (auto-detected). Set quantity to 0 to remove item."
+						"description": "Update quantity for specific item with price_id. Set quantity to 0 to remove item."
 					}
 				},
 				{
@@ -766,7 +766,7 @@
 							"host": ["{{base_url}}"],
 							"path": ["api", "cart", "item"]
 						},
-						"description": "Delete an item completely from cart. item_price_id is optional if item has only one price variant."
+						"description": "Delete an item completely from cart. item_price_id is required to identify the exact item variant."
 					}
 				},
 				{
@@ -781,14 +781,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1\n}"
+							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1,\n  \"item_price_id\": 1\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/cart/item",
 							"host": ["{{base_url}}"],
 							"path": ["api", "cart", "item"]
 						},
-						"description": "Delete item without price_id (auto-detected if only one variant exists)."
+						"description": "Delete item with price_id (required to identify the exact item variant)."
 					}
 				},
 				{
@@ -1044,6 +1044,108 @@
 							]
 						},
 						"url": { "raw": "{{base_url}}/api/my-restaurant/1", "host": ["{{base_url}}"], "path": ["api","my-restaurant","1"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Addresses",
+			"item": [
+				{
+					"name": "Create Address (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"city_id\": 1,\n  \"state\": \"California\",\n  \"zip_code\": \"90001\",\n  \"street_address\": \"123 Main Street\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/addresses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "addresses"]
+						}
+					}
+				},
+				{
+					"name": "Get Addresses (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/addresses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "addresses"]
+						}
+					}
+				},
+				{
+					"name": "Get Address By ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/addresses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "addresses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Address (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"state\": \"Nevada\",\n  \"zip_code\": \"89101\",\n  \"street_address\": \"456 Updated Street\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/addresses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "addresses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Address (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/addresses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "addresses", "1"]
+						}
 					}
 				}
 			]

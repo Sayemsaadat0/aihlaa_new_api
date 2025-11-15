@@ -318,14 +318,14 @@ class CartController extends Controller
                 'guest_id' => 'nullable|string|max:255|required_without:user_id',
                 'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
                 'item_id' => 'required|integer|exists:items,id',
-                'item_price_id' => 'nullable|integer|exists:item_prices,id',
+                'item_price_id' => 'required|integer|exists:item_prices,id',
                 'quantity' => 'required|integer|min:0|max:999',
             ]);
 
             $userId = $validated['user_id'] ?? null;
             $guestId = $validated['guest_id'] ?? null;
             $itemId = $validated['item_id'];
-            $priceId = $validated['item_price_id'] ?? null;
+            $priceId = $validated['item_price_id'];
             $newQuantity = (int) $validated['quantity'];
 
             // Validate that user exists if user_id is provided
@@ -348,48 +348,6 @@ class CartController extends Controller
                 );
             }
 
-            // Build base query to find existing cart entries for this item
-            $baseCartQuery = Cart::where('item_id', $itemId);
-
-            if ($userId) {
-                $baseCartQuery->where('user_id', $userId)
-                    ->whereNull('guest_id');
-            } else {
-                $baseCartQuery->where('guest_id', $guestId)
-                    ->whereNull('user_id');
-            }
-
-            // If price_id is not provided, try to auto-detect it
-            if (!$priceId) {
-                $existingCartsForItem = $baseCartQuery->get();
-                
-                if ($existingCartsForItem->isEmpty()) {
-                    // Item not in cart - get the first/default price for this item
-                    $defaultPrice = ItemPrice::where('item_id', $itemId)->first();
-                    if (!$defaultPrice) {
-                        return $this->errorResponse(
-                            "Item with ID {$itemId} has no prices available",
-                            404
-                        );
-                    }
-                    $priceId = $defaultPrice->id;
-                } else {
-                    // Item exists in cart - check how many different prices
-                    $uniquePriceIds = $existingCartsForItem->pluck('price_id')->unique();
-                    
-                    if ($uniquePriceIds->count() > 1) {
-                        // Multiple price variants in cart - need to specify which one
-                        return $this->errorResponse(
-                            "Item with ID {$itemId} has multiple price variants in cart. Please specify 'item_price_id'. Available price IDs: " . $uniquePriceIds->implode(', '),
-                            422
-                        );
-                    }
-                    
-                    // Only one price variant - use it
-                    $priceId = $uniquePriceIds->first();
-                }
-            }
-
             // Validate that price exists and belongs to the item
             $price = ItemPrice::where('id', $priceId)
                 ->where('item_id', $itemId)
@@ -403,7 +361,17 @@ class CartController extends Controller
             }
 
             // Build query to find existing cart entries for this specific item and price
-            $cartQuery = $baseCartQuery->where('price_id', $priceId);
+            $cartQuery = Cart::where('item_id', $itemId)
+                ->where('price_id', $priceId);
+
+            if ($userId) {
+                $cartQuery->where('user_id', $userId)
+                    ->whereNull('guest_id');
+            } else {
+                $cartQuery->where('guest_id', $guestId)
+                    ->whereNull('user_id');
+            }
+
             $existingCarts = $cartQuery->get();
             $currentQuantity = $existingCarts->count();
 
@@ -490,13 +458,13 @@ class CartController extends Controller
                 'guest_id' => 'nullable|string|max:255|required_without:user_id',
                 'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
                 'item_id' => 'required|integer|exists:items,id',
-                'item_price_id' => 'nullable|integer|exists:item_prices,id',
+                'item_price_id' => 'required|integer|exists:item_prices,id',
             ]);
 
             $userId = $validated['user_id'] ?? null;
             $guestId = $validated['guest_id'] ?? null;
             $itemId = $validated['item_id'];
-            $priceId = $validated['item_price_id'] ?? null;
+            $priceId = $validated['item_price_id'];
 
             // Validate that user exists if user_id is provided
             if ($userId) {
@@ -518,57 +486,29 @@ class CartController extends Controller
                 );
             }
 
-            // Build base query to find existing cart entries for this item
-            $baseCartQuery = Cart::where('item_id', $itemId);
+            // Validate that price exists and belongs to the item
+            $price = ItemPrice::where('id', $priceId)
+                ->where('item_id', $itemId)
+                ->first();
+
+            if (!$price) {
+                return $this->errorResponse(
+                    "Price with ID {$priceId} does not belong to item with ID {$itemId}",
+                    422
+                );
+            }
+
+            // Build query to find existing cart entries for this item and price
+            $cartQuery = Cart::where('item_id', $itemId)
+                ->where('price_id', $priceId);
 
             if ($userId) {
-                $baseCartQuery->where('user_id', $userId)
+                $cartQuery->where('user_id', $userId)
                     ->whereNull('guest_id');
             } else {
-                $baseCartQuery->where('guest_id', $guestId)
+                $cartQuery->where('guest_id', $guestId)
                     ->whereNull('user_id');
             }
-
-            // If price_id is not provided, try to auto-detect it
-            if (!$priceId) {
-                $existingCartsForItem = $baseCartQuery->get();
-                
-                if ($existingCartsForItem->isEmpty()) {
-                    return $this->errorResponse(
-                        'Item not found in cart',
-                        404
-                    );
-                }
-
-                // Check how many different prices
-                $uniquePriceIds = $existingCartsForItem->pluck('price_id')->unique();
-                
-                if ($uniquePriceIds->count() > 1) {
-                    // Multiple price variants in cart - need to specify which one
-                    return $this->errorResponse(
-                        "Item with ID {$itemId} has multiple price variants in cart. Please specify 'item_price_id' to delete a specific variant. Available price IDs: " . $uniquePriceIds->implode(', '),
-                        422
-                    );
-                }
-                
-                // Only one price variant - use it
-                $priceId = $uniquePriceIds->first();
-            } else {
-                // Validate that price exists and belongs to the item
-                $price = ItemPrice::where('id', $priceId)
-                    ->where('item_id', $itemId)
-                    ->first();
-
-                if (!$price) {
-                    return $this->errorResponse(
-                        "Price with ID {$priceId} does not belong to item with ID {$itemId}",
-                        422
-                    );
-                }
-            }
-
-            // Build query to find existing cart entries for this specific item and price
-            $cartQuery = $baseCartQuery->where('price_id', $priceId);
             $existingCarts = $cartQuery->get();
 
             if ($existingCarts->isEmpty()) {
@@ -789,9 +729,11 @@ class CartController extends Controller
                         'item' => $cart->item,
                         'price' => $cart->price,
                         'quantity' => 0,
+                        'cart_ids' => [],
                     ];
                 }
                 $groupedItems[$key]['quantity']++;
+                $groupedItems[$key]['cart_ids'][] = $cart->id;
             }
 
             // Build items array
@@ -892,6 +834,8 @@ class CartController extends Controller
                 
                 if (!isset($groupedCarts[$key])) {
                     $groupedCarts[$key] = [
+                        'id' => $cart->id, // First cart ID as group identifier
+                        'cart_ids' => [], // All cart IDs in this group
                         'guest_id' => $cart->guest_id,
                         'user_id' => $cart->user_id,
                         'user' => $cart->user ? [
@@ -915,6 +859,9 @@ class CartController extends Controller
                         'updated_at' => $cart->updated_at,
                     ];
                 }
+
+                // Add cart ID to the group
+                $groupedCarts[$key]['cart_ids'][] = $cart->id;
 
                 // Add item to the group
                 if ($cart->item && $cart->price) {
@@ -958,16 +905,39 @@ class CartController extends Controller
                     ];
                 }
 
+                // Calculate discount amount if discount code exists
+                $discountAmount = 0;
+                if (!empty($group['discount']['coupon'])) {
+                    $discount = Discount::where('code', $group['discount']['coupon'])
+                        ->where('status', Discount::STATUS_PUBLISHED)
+                        ->first();
+                    
+                    if ($discount) {
+                        $discountAmount = (float) $discount->discount_price;
+                        $totalBeforeDiscount = $itemsPrice + ($itemsPrice * $taxPercentage / 100) + $deliveryCharge;
+                        if ($discountAmount > $totalBeforeDiscount) {
+                            $discountAmount = $totalBeforeDiscount;
+                        }
+                    }
+                }
+
                 $taxPrice = ($itemsPrice * $taxPercentage) / 100;
-                $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge;
+                $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge - $discountAmount;
+                if ($payablePrice < 0) {
+                    $payablePrice = 0;
+                }
 
                 $formattedCarts[] = [
+                    'id' => $group['id'],
                     'guest_id' => $group['guest_id'],
                     'user_id' => $group['user_id'],
                     'user' => $group['user'],
                     'items' => $items,
                     'items_price' => round($itemsPrice, 2),
-                    'discount' => $group['discount'],
+                    'discount' => [
+                        'coupon' => $group['discount']['coupon'],
+                        'amount' => round($discountAmount, 2),
+                    ],
                     'charges' => [
                         'tax' => round($taxPercentage, 2),
                         'tax_price' => round($taxPrice, 2),

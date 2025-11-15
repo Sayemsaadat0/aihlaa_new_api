@@ -29,6 +29,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'address_id',
     ];
 
     /**
@@ -68,5 +69,21 @@ class User extends Authenticatable
     public function isUser(): bool
     {
         return $this->role === self::ROLE_USER;
+    }
+
+    /**
+     * Get the addresses for the user.
+     */
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    /**
+     * Get the default/primary address for the user.
+     */
+    public function defaultAddress()
+    {
+        return $this->belongsTo(Address::class, 'address_id');
     }
 }

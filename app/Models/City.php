@@ -28,4 +28,12 @@ class City extends Model
     {
         return $this->hasMany(DeliveryCharge::class);
     }
+
+    /**
+     * Get the addresses for the city.
+     */
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
 }
