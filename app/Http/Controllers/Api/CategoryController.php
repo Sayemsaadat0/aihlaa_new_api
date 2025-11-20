@@ -12,11 +12,35 @@ class CategoryController extends Controller
     /**
      * Get all categories (Public API)
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $categories = Category::all();
-            
+            // Validate query parameters
+            $request->validate([
+                'isSpecial' => 'sometimes|string',
+                'has_price' => 'sometimes|in:1,0',
+            ]);
+
+            $isSpecial = $request->query('isSpecial');
+            $hasPrice = $request->query('has_price');
+
+            // Build query
+            $categoriesQuery = Category::query();
+
+            // Filter by isSpecial if provided
+            if ($isSpecial !== null) {
+                $categoriesQuery->where('isSpecial', $isSpecial);
+            }
+
+            // Filter by has_price if provided - only return categories that have items with prices
+            if ($hasPrice === '1') {
+                $categoriesQuery->whereHas('items', function ($query) {
+                    $query->whereHas('prices');
+                });
+            }
+
+            $categories = $categoriesQuery->get();
+
             return $this->successResponse([
                 'categories' => $categories,
                 'total' => $categories->count(),
@@ -61,11 +85,13 @@ class CategoryController extends Controller
             $request->validate([
                 'name' => 'required|string|max:255',
                 'status' => 'required|in:published,unpublished',
+                'isSpecial' => 'sometimes|string',
             ]);
 
             $category = Category::create([
                 'name' => $request->name,
                 'status' => $request->status,
+                'isSpecial' => $request->input('isSpecial', 'false'),
             ]);
 
             return $this->successResponse([
@@ -96,16 +122,21 @@ class CategoryController extends Controller
             $request->validate([
                 'name' => 'sometimes|string|max:255',
                 'status' => 'sometimes|in:published,unpublished',
+                'isSpecial' => 'sometimes|string',
             ]);
 
             $updateData = [];
             
-            if ($request->has('name')) {
+            if ($request->filled('name')) {
                 $updateData['name'] = $request->name;
             }
             
-            if ($request->has('status')) {
+            if ($request->filled('status')) {
                 $updateData['status'] = $request->status;
+            }
+            
+            if (array_key_exists('isSpecial', $request->all())) {
+                $updateData['isSpecial'] = $request->input('isSpecial');
             }
 
             if (empty($updateData)) {

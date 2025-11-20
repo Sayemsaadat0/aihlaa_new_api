@@ -27,11 +27,57 @@ class ItemController extends Controller
 
     /**
      * Get all items (Public API)
+     * 
+     * Query Parameters:
+     * - category_id (optional): Filter items by category ID
+     * - isSpecial (optional): Filter items by isSpecial status (true/false/1/0)
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $items = Item::with(['category', 'prices'])->get();
+            // Validate query parameters
+            $request->validate([
+                'category_id' => 'sometimes|integer',
+                'isSpecial' => 'sometimes|in:true,false,1,0',
+                'has_price' => 'sometimes|in:1,0',
+            ]);
+
+            $categoryId = $request->query('category_id');
+            $isSpecial = $request->query('isSpecial');
+            $hasPrice = $request->query('has_price');
+
+            // If category_id is provided, check if it exists
+            if ($categoryId) {
+                $categoryExists = Category::where('id', $categoryId)->exists();
+                
+                if (!$categoryExists) {
+                    return $this->notFoundResponse('Category');
+                }
+            }
+
+            // Build items query
+            $itemsQuery = Item::with(['category', 'prices']);
+
+            // Filter by category_id if provided
+            if ($categoryId) {
+                $itemsQuery->where('category_id', $categoryId);
+            }
+
+            // Filter by isSpecial if provided
+            if ($isSpecial !== null) {
+                // Convert string boolean to actual boolean/integer for query
+                $isSpecialValue = in_array($isSpecial, ['true', '1', 1], true);
+                $itemsQuery->where('isSpecial', $isSpecialValue);
+            }
+
+            $items = $itemsQuery->get();
+            
+            // Filter by has_price if provided
+            if ($hasPrice === '1') {
+                $items = $items->filter(function ($item) {
+                    return $item->prices->isNotEmpty();
+                });
+            }
             
             $items = $items->map(function ($item) {
                 return [
@@ -40,6 +86,7 @@ class ItemController extends Controller
                     'details' => $item->details,
                     'thumbnail' => $this->getThumbnailUrl($item->thumbnail),
                     'status' => $item->status,
+                    'isSpecial' => (boolean) $item->isSpecial,
                     'category' => [
                         'id' => $item->category->id,
                         'name' => $item->category->name,
@@ -58,6 +105,8 @@ class ItemController extends Controller
                 'items' => $items,
                 'total' => $items->count(),
             ], 'Items retrieved successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
         } catch (\Exception $e) {
             return $this->errorResponse(
                 'Failed to retrieve items: ' . $e->getMessage(),
@@ -78,6 +127,7 @@ class ItemController extends Controller
                 'category_id' => 'required|exists:categories,id',
                 'status' => 'required|in:published,unpublished',
                 'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'isSpecial' => 'sometimes|in:true,false,1,0',
             ]);
 
             $thumbnailPath = null;
@@ -110,6 +160,7 @@ class ItemController extends Controller
                 'category_id' => $request->category_id,
                 'status' => $request->status,
                 'thumbnail' => $thumbnailPath,
+                'isSpecial' => $request->boolean('isSpecial', false),
             ]);
 
             $item->load(['category', 'prices']);
@@ -121,6 +172,7 @@ class ItemController extends Controller
                     'details' => $item->details,
                     'thumbnail' => $this->getThumbnailUrl($item->thumbnail),
                     'status' => $item->status,
+                    'isSpecial' => (boolean) $item->isSpecial,
                     'category' => [
                         'id' => $item->category->id,
                         'name' => $item->category->name,
@@ -157,6 +209,7 @@ class ItemController extends Controller
                 'category_id' => 'sometimes|exists:categories,id',
                 'status' => 'sometimes|in:published,unpublished',
                 'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'isSpecial' => 'sometimes|in:true,false,1,0',
             ]);
 
             $updateData = [];
@@ -176,6 +229,10 @@ class ItemController extends Controller
             
             if ($request->has('status') && $request->input('status') !== null) {
                 $updateData['status'] = $request->input('status');
+            }
+
+            if ($request->has('isSpecial')) {
+                $updateData['isSpecial'] = $request->boolean('isSpecial');
             }
 
             // Handle thumbnail update
@@ -226,6 +283,7 @@ class ItemController extends Controller
                     'details' => $item->details,
                     'thumbnail' => $this->getThumbnailUrl($item->thumbnail),
                     'status' => $item->status,
+                    'isSpecial' => (boolean) $item->isSpecial,
                     'category' => [
                         'id' => $item->category->id,
                         'name' => $item->category->name,
@@ -371,6 +429,7 @@ class ItemController extends Controller
                             'thumbnail' => $this->getThumbnailUrl($item->thumbnail),
                             'description' => $item->details,
                             'isAvailable' => $item->status === Item::STATUS_PUBLISHED,
+                            'isSpecial' => (boolean) $item->isSpecial,
                         ];
                     })->values(), // Reset array keys
                 ];

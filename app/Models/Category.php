@@ -23,6 +23,7 @@ class Category extends Model
     protected $fillable = [
         'name',
         'status',
+        'isSpecial',
     ];
 
     /**
@@ -34,6 +35,7 @@ class Category extends Model
     {
         return [
             'status' => 'string',
+            'isSpecial' => 'string',
         ];
     }
 

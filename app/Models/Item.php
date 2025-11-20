@@ -26,6 +26,7 @@ class Item extends Model
         'details',
         'category_id',
         'status',
+        'isSpecial',
     ];
 
     /**
@@ -37,6 +38,7 @@ class Item extends Model
     {
         return [
             'status' => 'string',
+            'isSpecial' => 'boolean',
         ];
     }
 

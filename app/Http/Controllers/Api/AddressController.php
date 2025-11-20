@@ -10,26 +10,50 @@ use Illuminate\Validation\ValidationException;
 class AddressController extends Controller
 {
     /**
-     * Store a newly created address (Public API)
+     * Store a newly created address (Requires Authentication)
      */
     public function store(Request $request)
     {
         try {
+            // Get authenticated user from token
+            $user = $request->user();
+            
+            if (!$user) {
+                return $this->errorResponse(
+                    'Unauthenticated. Please provide a valid authorization token.',
+                    401
+                );
+            }
+
             $request->validate([
-                'user_id' => 'required|integer|exists:users,id',
                 'city_id' => 'required|integer|exists:cities,id',
                 'state' => 'required|string|max:255',
                 'zip_code' => 'required|string|max:50',
                 'street_address' => 'required|string',
+            ], [
+                'city_id.required' => 'City ID is required.',
+                'city_id.exists' => 'The selected city does not exist.',
+                'state.required' => 'State is required.',
+                'state.max' => 'State cannot exceed 255 characters.',
+                'zip_code.required' => 'Zip code is required.',
+                'zip_code.max' => 'Zip code cannot exceed 50 characters.',
+                'street_address.required' => 'Street address is required.',
             ]);
 
             $address = Address::create([
-                'user_id' => $request->user_id,
+                'user_id' => $user->id,
                 'city_id' => $request->city_id,
                 'state' => $request->state,
                 'zip_code' => $request->zip_code,
                 'street_address' => $request->street_address,
             ]);
+
+            // Set as default address if user doesn't have one
+            if (!$user->address_id) {
+                $user->update(['address_id' => $address->id]);
+                // Refresh user to get updated address_id
+                $user->refresh();
+            }
 
             return $this->successResponse([
                 'address' => $address->load(['user', 'city']),
@@ -173,5 +197,7 @@ class AddressController extends Controller
         }
     }
 }
+
+
 
 

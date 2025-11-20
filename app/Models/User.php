@@ -80,9 +80,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the default/primary address for the user.
+     * Get the delivery address (default/primary address) for the user.
      */
-    public function defaultAddress()
+    public function delivery_address()
     {
         return $this->belongsTo(Address::class, 'address_id');
     }

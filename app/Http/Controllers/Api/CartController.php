@@ -44,6 +44,7 @@ class CartController extends Controller
                 $deliveryCharge = $restaurant ? (float) $restaurant->delivery_charge : 0;
                 
                 return $this->successResponse([
+                    'id' => null,
                     'guest_id' => $request->input('guest_id', ''),
                     'user_id' => $request->input('user_id', ''),
                     'items' => [],
@@ -134,7 +135,11 @@ class CartController extends Controller
                 $payablePrice = 0;
             }
 
+            // Get first cart ID as the cart group identifier
+            $firstCartId = $carts->first()->id ?? null;
+
             return $this->successResponse([
+                'id' => $firstCartId,
                 'guest_id' => $request->input('guest_id', ''),
                 'user_id' => $request->input('user_id', ''),
                 'items' => $items,
@@ -175,9 +180,20 @@ class CartController extends Controller
                 'items.*.quantity' => 'nullable|integer|min:1',
             ]);
 
+            // Get existing cart items for user/guest
+            $cartQuery = Cart::where(function ($query) use ($request) {
+                if ($request->filled('user_id')) {
+                    $query->where('user_id', $request->user_id)->whereNull('guest_id');
+                } else {
+                    $query->where('guest_id', $request->guest_id)->whereNull('user_id');
+                }
+            });
+            $existingCarts = $cartQuery->get();
+
             // Validate items and prices
             $itemsPrice = 0;
             $validatedItems = [];
+            $newCartsCreated = [];
 
             foreach ($request->items as $index => $item) {
                 $itemId = $item['item_id'];
@@ -206,13 +222,41 @@ class CartController extends Controller
                 }
 
                 $itemPriceValue = (float) $price->price;
+
+                // Check if this item with same price already exists in cart
+                $existingCartItem = $existingCarts->first(function ($cart) use ($itemId, $priceId) {
+                    return $cart->item_id == $itemId && $cart->price_id == $priceId;
+                });
+
+                if ($existingCartItem) {
+                    // Item already exists - increase quantity by adding more cart entries
+                    for ($i = 0; $i < $quantity; $i++) {
+                        $newCart = Cart::create([
+                            'guest_id' => $request->guest_id,
+                            'user_id' => $request->user_id,
+                            'item_id' => $itemId,
+                            'price_id' => $priceId,
+                            'discount_coupon' => $existingCartItem->discount_coupon, // Preserve discount if exists
+                            'payable_price' => $itemPriceValue,
+                        ]);
+                        $newCartsCreated[] = $newCart;
+                    }
+                } else {
+                    // New item - create cart entries
+                    for ($i = 0; $i < $quantity; $i++) {
+                        $newCart = Cart::create([
+                            'guest_id' => $request->guest_id,
+                            'user_id' => $request->user_id,
+                            'item_id' => $itemId,
+                            'price_id' => $priceId,
+                            'discount_coupon' => null,
+                            'payable_price' => $itemPriceValue,
+                        ]);
+                        $newCartsCreated[] = $newCart;
+                    }
+                }
+
                 $itemsPrice += $itemPriceValue * $quantity;
-                $validatedItems[] = [
-                    'item_id' => $itemId,
-                    'price_id' => $priceId,
-                    'price_value' => $itemPriceValue,
-                    'quantity' => $quantity,
-                ];
             }
 
             // Get restaurant data for tax and delivery_charge
@@ -233,27 +277,12 @@ class CartController extends Controller
             // Calculate payable price
             $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge;
 
-            // Create cart entries for each item (create multiple entries based on quantity)
-            $createdCarts = [];
-            foreach ($validatedItems as $validatedItem) {
-                $quantity = $validatedItem['quantity'];
-                // Create one cart entry for each quantity
-                for ($i = 0; $i < $quantity; $i++) {
-                    $cart = Cart::create([
-                        'guest_id' => $request->guest_id,
-                        'user_id' => $request->user_id,
-                        'item_id' => $validatedItem['item_id'],
-                        'price_id' => $validatedItem['price_id'],
-                        'discount_coupon' => null,
-                        'payable_price' => $validatedItem['price_value'], // Store individual item price
-                    ]);
-                    $createdCarts[] = $cart;
-                }
-            }
+            // Get all cart items (existing + newly created) for the response
+            $allCarts = $cartQuery->get();
 
             // Return summary similar to GET response (group items by item_id and price_id)
             $groupedItems = [];
-            foreach ($createdCarts as $cart) {
+            foreach ($allCarts as $cart) {
                 $cart->load(['item', 'price']);
                 if ($cart->item && $cart->price) {
                     $key = $cart->item_id . '_' . $cart->price_id;
@@ -262,33 +291,70 @@ class CartController extends Controller
                             'item' => $cart->item,
                             'price' => $cart->price,
                             'quantity' => 0,
+                            'cart_ids' => [],
                         ];
                     }
                     $groupedItems[$key]['quantity']++;
+                    $groupedItems[$key]['cart_ids'][] = $cart->id;
                 }
             }
 
+            // Build items array
             $items = [];
+            $totalItemsPrice = 0;
+            $discountCoupon = $allCarts->first()->discount_coupon ?? '';
+
             foreach ($groupedItems as $group) {
+                $itemPrice = (float) $group['price']->price;
+                $totalItemsPrice += $itemPrice * $group['quantity'];
+                
                 $items[] = [
                     'id' => $group['item']->id,
                     'title' => $group['item']->name,
                     'quantity' => $group['quantity'],
                     'price' => [
                         'id' => $group['price']->id,
-                        'price' => (float) $group['price']->price,
+                        'price' => $itemPrice,
                     ],
                 ];
             }
 
+            // Recalculate totals based on all cart items
+            $taxPrice = ($totalItemsPrice * $taxPercentage) / 100;
+
+            // Calculate discount amount if discount code exists
+            $discountAmount = 0;
+            if (!empty($discountCoupon)) {
+                $discount = Discount::where('code', $discountCoupon)
+                    ->where('status', Discount::STATUS_PUBLISHED)
+                    ->first();
+                
+                if ($discount) {
+                    $discountAmount = (float) $discount->discount_price;
+                    $totalBeforeDiscount = $totalItemsPrice + $taxPrice + $deliveryCharge;
+                    if ($discountAmount > $totalBeforeDiscount) {
+                        $discountAmount = $totalBeforeDiscount;
+                    }
+                }
+            }
+
+            $payablePrice = $totalItemsPrice + $taxPrice + $deliveryCharge - $discountAmount;
+            if ($payablePrice < 0) {
+                $payablePrice = 0;
+            }
+
+            // Get first cart ID as the cart group identifier
+            $firstCartId = $allCarts->first()->id ?? null;
+
             return $this->successResponse([
+                'id' => $firstCartId,
                 'guest_id' => $request->input('guest_id', ''),
                 'user_id' => $request->input('user_id', ''),
                 'items' => $items,
-                'items_price' => round($itemsPrice, 2),
+                'items_price' => round($totalItemsPrice, 2),
                 'discount' => [
-                    'coupon' => '',
-                    'amount' => 0,
+                    'coupon' => $discountCoupon,
+                    'amount' => round($discountAmount, 2),
                 ],
                 'charges' => [
                     'tax' => round($taxPercentage, 2),
@@ -296,7 +362,7 @@ class CartController extends Controller
                     'delivery_charges' => round($deliveryCharge, 2),
                 ],
                 'payable_price' => round($payablePrice, 2),
-            ], 'Cart created successfully', 201);
+            ], 'Cart updated successfully', 200);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
         } catch (\Exception $e) {
@@ -611,6 +677,70 @@ class CartController extends Controller
     }
 
     /**
+     * Delete entire cart (Public API)
+     */
+    public function deleteCart(Request $request, $id)
+    {
+        try {
+            // Validate cart ID
+            if (!is_numeric($id)) {
+                return $this->errorResponse(
+                    'Invalid cart ID. Cart ID must be a number.',
+                    422
+                );
+            }
+
+            $cartId = (int) $id;
+
+            // Find the cart entry
+            $cart = Cart::find($cartId);
+            if (!$cart) {
+                return $this->errorResponse(
+                    'Cart with ID ' . $cartId . ' not found.',
+                    404
+                );
+            }
+
+            // Get user_id or guest_id from the cart
+            $userId = $cart->user_id;
+            $guestId = $cart->guest_id;
+
+            // Build query to find all cart entries for this user/guest
+            $cartQuery = Cart::where(function ($query) use ($userId, $guestId) {
+                if ($userId) {
+                    $query->where('user_id', $userId)->whereNull('guest_id');
+                } else {
+                    $query->where('guest_id', $guestId)->whereNull('user_id');
+                }
+            });
+
+            // Get count before deletion
+            $deletedCount = $cartQuery->count();
+
+            if ($deletedCount === 0) {
+                return $this->errorResponse(
+                    'Cart is already empty.',
+                    404
+                );
+            }
+
+            // Delete all cart entries
+            $cartQuery->delete();
+
+            return $this->successResponse([
+                'deleted_count' => $deletedCount,
+            ], 'Cart deleted successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to delete cart: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
      * Remove discount from cart (Public API)
      */
     public function removeDiscount(Request $request)
@@ -703,6 +833,7 @@ class CartController extends Controller
                 $deliveryCharge = $restaurant ? (float) $restaurant->delivery_charge : 0;
                 
                 return $this->successResponse([
+                    'id' => null,
                     'guest_id' => $guestId ?? '',
                     'user_id' => $userId ?? '',
                     'items' => [],
@@ -793,7 +924,11 @@ class CartController extends Controller
                 $payablePrice = 0;
             }
 
+            // Get first cart ID as the cart group identifier
+            $firstCartId = $carts->first()->id ?? null;
+
             return $this->successResponse([
+                'id' => $firstCartId,
                 'guest_id' => $guestId ?? '',
                 'user_id' => $userId ?? '',
                 'items' => $items,

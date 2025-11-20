@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\DeliveryChargeController;
 use App\Http\Controllers\Api\RestaurantController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,17 +59,20 @@ Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart', [CartController::class, 'store']);
 Route::put('/cart/update-quantity', [CartController::class, 'updateQuantity']);
 Route::delete('/cart/item', [CartController::class, 'deleteItem']);
+Route::delete('/cart/{id}', [CartController::class, 'deleteCart']);
 Route::post('/cart/apply-discount', [CartController::class, 'applyDiscount']);
 Route::delete('/cart/remove-discount', [CartController::class, 'removeDiscount']);
 
 // Public contact route (POST only)
 Route::post('/contact', [ContactController::class, 'store']);
 
-// Public address route (POST only)
-Route::post('/addresses', [AddressController::class, 'store']);
+// Public order route (POST only)
+Route::post('/orders', [OrderController::class, 'store']);
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
+    // Address route (requires authentication)
+    Route::post('/addresses', [AddressController::class, 'store']);
     // User routes (authenticated users)
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);

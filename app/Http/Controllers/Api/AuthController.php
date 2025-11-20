@@ -41,6 +41,9 @@ class AuthController extends Controller
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
+            // Load delivery address relationship
+            $user->load('delivery_address.city');
+
             return $this->successResponse([
                 'user' => $user,
                 'access_token' => $token,
@@ -77,6 +80,9 @@ class AuthController extends Controller
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
+
+            // Load delivery address relationship
+            $user->load('delivery_address.city');
 
             return $this->successResponse([
                 'user' => $user,
@@ -116,8 +122,13 @@ class AuthController extends Controller
     public function user(Request $request)
     {
         try {
+            $user = $request->user();
+            
+            // Load delivery address relationship
+            $user->load('delivery_address.city');
+
             return $this->successResponse([
-                'user' => $request->user(),
+                'user' => $user,
             ], 'User retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse(
@@ -164,8 +175,12 @@ class AuthController extends Controller
 
             $user->update($updateData);
 
+            // Refresh user and load delivery address
+            $user->refresh();
+            $user->load('delivery_address.city');
+
             return $this->successResponse([
-                'user' => $user->fresh(),
+                'user' => $user,
             ], 'User updated successfully');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e);
