@@ -350,6 +350,8 @@ class ItemController extends Controller
      * - status (optional): Filter categories by status (published/unpublished)
      * - item_status (optional): Filter items by status (published/unpublished)
      * - available_only (optional): If true, only return published items (default: false)
+     * - has_price (optional): If 1, only return items that have prices
+     * - search (optional): Search items by name/title
      * 
      * @param Request $request
      * @return JsonResponse
@@ -363,12 +365,17 @@ class ItemController extends Controller
                 'status' => 'sometimes|in:published,unpublished',
                 'item_status' => 'sometimes|in:published,unpublished',
                 'available_only' => 'sometimes|string|in:true,false,1,0',
+                'has_price' => 'sometimes|in:1,0',
+                'search' => 'sometimes|string|max:255',
             ]);
 
             // Convert string boolean to actual boolean
             if (isset($validated['available_only'])) {
                 $validated['available_only'] = in_array($validated['available_only'], ['true', '1', 1], true);
             }
+
+            $hasPrice = $request->query('has_price');
+            $search = $request->query('search');
 
             // Build category query
             $categoryQuery = Category::query();
@@ -387,7 +394,7 @@ class ItemController extends Controller
             }
 
             // Get categories with their items
-            $categories = $categoryQuery->with(['items' => function ($query) use ($validated) {
+            $categories = $categoryQuery->with(['items' => function ($query) use ($validated, $search, $hasPrice) {
                 // Eager load prices for items
                 $query->with('prices');
 
@@ -402,14 +409,33 @@ class ItemController extends Controller
                     $query->where('status', Item::STATUS_PUBLISHED);
                 }
 
+                // Filter by search term if provided
+                if ($search) {
+                    $query->where('name', 'like', '%' . $search . '%');
+                }
+
+                // Filter by has_price if provided
+                if ($hasPrice === '1') {
+                    $query->whereHas('prices');
+                }
+
                 // Order items by id (you can change this to any field)
                 $query->orderBy('id', 'asc');
             }])->orderBy('id', 'asc')->get();
 
             // Transform data to match the requested structure
-            $result = $categories->map(function ($category) {
+            $result = $categories->map(function ($category) use ($hasPrice) {
+                // Filter items based on has_price if needed
+                $items = $category->items;
+                
+                if ($hasPrice === '1') {
+                    $items = $items->filter(function ($item) {
+                        return $item->prices->isNotEmpty();
+                    });
+                }
+
                 // Filter out categories with no items
-                if ($category->items->isEmpty()) {
+                if ($items->isEmpty()) {
                     return null;
                 }
 
@@ -417,15 +443,16 @@ class ItemController extends Controller
                     'id' => $category->id,
                     'categoryName' => $category->name,
                     'description' => null, // Category description field doesn't exist in DB
-                    'items' => $category->items->map(function ($item) {
-                        // Get the first price (or null if no prices)
-                        $firstPrice = $item->prices->first();
-                        $price = $firstPrice ? (float) $firstPrice->price : null;
-
+                    'items' => $items->map(function ($item) {
                         return [
                             'id' => $item->id,
                             'name' => $item->name,
-                            'price' => $price,
+                            'prices' => $item->prices->map(function ($price) {
+                                return [
+                                    'id' => $price->id,
+                                    'price' => (float) $price->price,
+                                ];
+                            }),
                             'thumbnail' => $this->getThumbnailUrl($item->thumbnail),
                             'description' => $item->details,
                             'isAvailable' => $item->status === Item::STATUS_PUBLISHED,

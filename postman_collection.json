@@ -548,7 +548,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/items/by-category",
+							"raw": "{{base_url}}/api/items/by-category?has_price=1&search=burger",
 							"host": ["{{base_url}}"],
 							"path": ["api", "items", "by-category"],
 							"query": [
@@ -575,9 +575,22 @@
 									"value": "true",
 									"description": "Optional: If true, only return published items",
 									"disabled": true
+								},
+								{
+									"key": "has_price",
+									"value": "1",
+									"description": "Optional: If 1, only return items that have prices",
+									"disabled": false
+								},
+								{
+									"key": "search",
+									"value": "burger",
+									"description": "Optional: Search items by name/title",
+									"disabled": false
 								}
 							]
-						}
+						},
+						"description": "Get items grouped by category. Items now return 'prices' as an array instead of a single 'price' field."
 					}
 				}
 			]
