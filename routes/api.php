@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\RestaurantController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\EmailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,8 +67,13 @@ Route::delete('/cart/remove-discount', [CartController::class, 'removeDiscount']
 // Public contact route (POST only)
 Route::post('/contact', [ContactController::class, 'store']);
 
-// Public order route (POST only)
+// Public order routes
 Route::post('/orders', [OrderController::class, 'store']);
+Route::get('/orders/{id}', [OrderController::class, 'show']);
+
+// Public email routes
+Route::post('/v1/emails/send', [EmailController::class, 'send']);
+Route::get('/v1/emails/types', [EmailController::class, 'getTypes']);
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {

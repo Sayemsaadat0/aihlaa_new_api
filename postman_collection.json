@@ -1159,7 +1159,7 @@
 			"name": "Orders",
 			"item": [
 				{
-					"name": "Create Order - User with Address ID (Public)",
+					"name": "Create Order - User (Public)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -1170,18 +1170,18 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"user_id\": 1,\n  \"cart_id\": 5,\n  \"address_id\": 5,\n  \"phone\": \"+1-555-1234\",\n  \"email\": \"user@example.com\",\n  \"notes\": \"Please ring the doorbell\"\n}"
+							"raw": "{\n  \"user_id\": 1,\n  \"cart_id\": 5,\n  \"city_id\": 1,\n  \"state\": \"California\",\n  \"zip_code\": \"90210\",\n  \"street_address\": \"123 Main Street, Apt 4B\",\n  \"phone\": \"+1-555-1234\",\n  \"email\": \"user@example.com\",\n  \"notes\": \"Please ring the doorbell\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/orders",
 							"host": ["{{base_url}}"],
 							"path": ["api", "orders"]
 						},
-						"description": "Create order using user_id with existing address_id"
+						"description": "Create order for registered user. cart_id and email are required. After order creation, confirmation email is automatically sent to the provided email address using SMTP_FROM configuration. All cart items are moved to order_items table and cart is cleared."
 					}
 				},
 				{
-					"name": "Create Order - User with New Address (Public)",
+					"name": "Create Order - Guest (Public)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -1192,18 +1192,18 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"user_id\": 1,\n  \"cart_id\": 5,\n  \"city_id\": 1,\n  \"state\": \"California\",\n  \"zip_code\": \"90210\",\n  \"street_address\": \"123 Main Street, Apt 4B\",\n  \"phone\": \"+1-555-1234\",\n  \"email\": \"user@example.com\",\n  \"notes\": \"Leave at door\"\n}"
+							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"cart_id\": 10,\n  \"city_id\": 1,\n  \"state\": \"New York\",\n  \"zip_code\": \"10001\",\n  \"street_address\": \"456 Broadway, Suite 200\",\n  \"phone\": \"+1-555-5678\",\n  \"email\": \"guest@example.com\",\n  \"notes\": \"Call when arrived\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/orders",
 							"host": ["{{base_url}}"],
 							"path": ["api", "orders"]
 						},
-						"description": "Create order with new address (will create address automatically for registered users)"
+						"description": "Create order for guest user. cart_id and email are required. Confirmation email is automatically sent to the provided email address using SMTP_FROM configuration. All cart items are moved to order_items table and cart is cleared after order creation."
 					}
 				},
 				{
-					"name": "Create Order - Guest with New Address (Public)",
+					"name": "Create Order - User with Notes (Public)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -1214,18 +1214,18 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"guest_id\": \"guest123\",\n  \"city_id\": 1,\n  \"state\": \"New York\",\n  \"zip_code\": \"10001\",\n  \"street_address\": \"456 Broadway, Suite 200\",\n  \"phone\": \"+1-555-5678\",\n  \"email\": \"guest@example.com\",\n  \"notes\": \"Call when arrived\"\n}"
+							"raw": "{\n  \"user_id\": 2,\n  \"cart_id\": 8,\n  \"city_id\": 2,\n  \"state\": \"Texas\",\n  \"zip_code\": \"75001\",\n  \"street_address\": \"789 Oak Avenue, Building 5\",\n  \"phone\": \"+1-555-9999\",\n  \"email\": \"customer@example.com\",\n  \"notes\": \"Leave at front door. No need to ring bell.\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/orders",
 							"host": ["{{base_url}}"],
 							"path": ["api", "orders"]
 						},
-						"description": "Create order for guest with all cart items and new address"
+						"description": "Create order with delivery notes. All address fields and email are required. Order confirmation email is automatically sent to the provided email address using SMTP_FROM configuration."
 					}
 				},
 				{
-					"name": "Create Order - User All Cart Items (Public)",
+					"name": "Create Order - Guest Minimal (Public)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -1236,36 +1236,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"user_id\": 1,\n  \"address_id\": 5,\n  \"phone\": \"+1-555-1234\",\n  \"notes\": \"Special delivery instructions\"\n}"
+							"raw": "{\n  \"guest_id\": \"guest456\",\n  \"cart_id\": 12,\n  \"city_id\": 1,\n  \"state\": \"Florida\",\n  \"zip_code\": \"33101\",\n  \"street_address\": \"100 Beach Road\",\n  \"phone\": \"+1-555-0000\",\n  \"email\": \"guest@example.com\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/orders",
 							"host": ["{{base_url}}"],
 							"path": ["api", "orders"]
 						},
-						"description": "Create order using all cart items for user (no cart_id specified)"
-					}
-				},
-				{
-					"name": "Create Order - Guest with Single Cart ID (Public)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"guest_id\": \"guest456\",\n  \"cart_id\": 10,\n  \"city_id\": 2,\n  \"state\": \"Texas\",\n  \"zip_code\": \"75001\",\n  \"street_address\": \"789 Oak Avenue\",\n  \"phone\": \"+1-555-9999\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/orders",
-							"host": ["{{base_url}}"],
-							"path": ["api", "orders"]
-						},
-						"description": "Create order for guest with specific cart ID"
+						"description": "Create order without notes (notes is optional). Email is required. Response includes cart_details with items, discount, charges, and payable_price. Confirmation email is automatically sent to the provided email address using SMTP_FROM configuration."
 					}
 				},
 				{
@@ -1338,6 +1316,90 @@
 							]
 						},
 						"description": "Get list of orders with optional filters. NOTE: This endpoint needs to be implemented."
+					}
+				}
+			]
+		},
+		{
+			"name": "Email",
+			"item": [
+				{
+					"name": "Send Email - Order Confirmation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"customer@example.com\",\n  \"type\": \"order_confirmation\",\n  \"data\": {\n    \"order\": {\n      \"id\": 1,\n      \"status\": \"pending\",\n      \"total_amount\": 71.00\n    },\n    \"orderData\": {\n      \"id\": 1,\n      \"order_id\": 1,\n      \"cart_details\": {\n        \"items\": [\n          {\n            \"id\": 1,\n            \"title\": \"Sample Item\",\n            \"quantity\": 2,\n            \"price\": {\n              \"id\": 1,\n              \"price\": 10.00\n            }\n          }\n        ],\n        \"items_price\": 20.00,\n        \"discount\": {\n          \"coupon\": \"SAVE10\",\n          \"amount\": 10.00\n        },\n        \"charges\": {\n          \"tax\": 5.00,\n          \"tax_price\": 1.00,\n          \"delivery_charges\": 50.00\n        },\n        \"payable_price\": 71.00\n      },\n      \"payable_amount\": 71.00,\n      \"status\": \"pending\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/emails/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emails", "send"]
+						},
+						"description": "Send order confirmation email. Requires 'order' object and 'orderData' array in data field."
+					}
+				},
+				{
+					"name": "Send Email - Welcome",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"newuser@example.com\",\n  \"type\": \"welcome\",\n  \"data\": {\n    \"user\": {\n      \"name\": \"John Doe\",\n      \"email\": \"newuser@example.com\"\n    },\n    \"data\": {\n      \"message\": \"Thank you for joining us! We're excited to have you on board.\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/emails/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emails", "send"]
+						},
+						"description": "Send welcome email to new users. Requires 'user' object in data field."
+					}
+				},
+				{
+					"name": "Send Email - Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"user@example.com\",\n  \"type\": \"notification\",\n  \"data\": {\n    \"title\": \"Order Status Update\",\n    \"message\": \"Your order #123 has been shipped! Track your order using the tracking number: TRACK123\",\n    \"data\": {\n      \"order_id\": 123,\n      \"tracking_number\": \"TRACK123\",\n      \"status\": \"on_the_way\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/emails/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emails", "send"]
+						},
+						"description": "Send general notification email. Requires 'title' and 'message' in data field."
+					}
+				},
+				{
+					"name": "Get Available Email Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/emails/types",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emails", "types"]
+						},
+						"description": "Get list of available email types that can be sent via the API."
 					}
 				}
 			]

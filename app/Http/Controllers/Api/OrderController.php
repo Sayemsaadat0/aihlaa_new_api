@@ -6,15 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
-use App\Models\Address;
 use App\Models\Restaurant;
 use App\Models\Discount;
 use App\Models\User;
 use App\Models\Item;
 use App\Models\ItemPrice;
+use App\Mail\OrderConfirmation;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 
 class OrderController extends Controller
@@ -29,32 +31,31 @@ class OrderController extends Controller
             $validated = $request->validate([
                 'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
                 'guest_id' => 'nullable|string|max:255|required_without:user_id',
-                'cart_id' => 'nullable|integer|exists:carts,id',
-                // Address validation - either address_id or full address
-                'address_id' => 'nullable|integer|exists:addresses,id',
-                'city_id' => 'nullable|integer|exists:cities,id|required_without:address_id',
-                'state' => 'nullable|string|max:255|required_without:address_id',
-                'zip_code' => 'nullable|string|max:50|required_without:address_id',
-                'street_address' => 'nullable|string|required_without:address_id',
+                'cart_id' => 'required|integer|exists:carts,id',
+                'city_id' => 'required|integer|exists:cities,id',
+                'state' => 'required|string|max:255',
+                'zip_code' => 'required|string|max:50',
+                'street_address' => 'required|string',
                 'phone' => 'required|string|max:255',
-                'email' => 'nullable|string|email|max:255',
+                'email' => 'required|string|email|max:255',
                 'notes' => 'nullable|string',
             ], [
                 'user_id.required_without' => 'Either user_id or guest_id is required.',
                 'user_id.exists' => 'The selected user does not exist.',
                 'guest_id.required_without' => 'Either user_id or guest_id is required.',
                 'guest_id.max' => 'Guest ID cannot exceed 255 characters.',
+                'cart_id.required' => 'Cart ID is required.',
                 'cart_id.exists' => 'The selected cart does not exist.',
-                'address_id.exists' => 'The selected address does not exist.',
-                'city_id.required_without' => 'City ID is required when address_id is not provided.',
+                'city_id.required' => 'City ID is required.',
                 'city_id.exists' => 'The selected city does not exist.',
-                'state.required_without' => 'State is required when address_id is not provided.',
+                'state.required' => 'State is required.',
                 'state.max' => 'State cannot exceed 255 characters.',
-                'zip_code.required_without' => 'Zip code is required when address_id is not provided.',
+                'zip_code.required' => 'Zip code is required.',
                 'zip_code.max' => 'Zip code cannot exceed 50 characters.',
-                'street_address.required_without' => 'Street address is required when address_id is not provided.',
+                'street_address.required' => 'Street address is required.',
                 'phone.required' => 'Phone number is required for order delivery.',
                 'phone.max' => 'Phone number cannot exceed 255 characters.',
+                'email.required' => 'Email address is required for order confirmation.',
                 'email.email' => 'Please provide a valid email address.',
                 'email.max' => 'Email cannot exceed 255 characters.',
             ]);
@@ -85,51 +86,47 @@ class OrderController extends Controller
                 }
             }
 
-            // Get cart items
-            $cartItems = [];
-            if ($request->filled('cart_id')) {
-                // Get single cart item
-                $cart = Cart::with(['item', 'price'])->find($request->cart_id);
-                if (!$cart) {
-                    DB::rollBack();
-                    return $this->errorResponse(
-                        'Cart item with ID ' . $request->cart_id . ' not found. Please provide a valid cart_id.',
-                        404
-                    );
-                }
-                // Validate cart belongs to user/guest
-                if ($userId && $cart->user_id != $userId) {
-                    DB::rollBack();
-                    return $this->errorResponse(
-                        'Cart item with ID ' . $request->cart_id . ' does not belong to user with ID ' . $userId . '. You can only create orders from your own cart items.',
-                        403
-                    );
-                }
-                if ($guestId && $cart->guest_id != $guestId) {
-                    DB::rollBack();
-                    return $this->errorResponse(
-                        'Cart item with ID ' . $request->cart_id . ' does not belong to guest with ID ' . $guestId . '. You can only create orders from your own cart items.',
-                        403
-                    );
-                }
-                $cartItems = [$cart];
+            // Get cart items - cart_id is required
+            $cart = Cart::with(['item', 'price'])->find($request->cart_id);
+            if (!$cart) {
+                DB::rollBack();
+                return $this->errorResponse(
+                    'Cart item with ID ' . $request->cart_id . ' not found. Please provide a valid cart_id.',
+                    404
+                );
+            }
+            
+            // Validate cart belongs to user/guest
+            if ($userId && $cart->user_id != $userId) {
+                DB::rollBack();
+                return $this->errorResponse(
+                    'Cart item with ID ' . $request->cart_id . ' does not belong to user with ID ' . $userId . '. You can only create orders from your own cart items.',
+                    403
+                );
+            }
+            if ($guestId && $cart->guest_id != $guestId) {
+                DB::rollBack();
+                return $this->errorResponse(
+                    'Cart item with ID ' . $request->cart_id . ' does not belong to guest with ID ' . $guestId . '. You can only create orders from your own cart items.',
+                    403
+                );
+            }
+            
+            // Get all cart items for the same user/guest to build cart details
+            $cartQuery = Cart::with(['item', 'price']);
+            if ($userId) {
+                $cartQuery->where('user_id', $userId)->whereNull('guest_id');
             } else {
-                // Get all cart items for user/guest
-                $cartQuery = Cart::with(['item', 'price']);
-                if ($userId) {
-                    $cartQuery->where('user_id', $userId)->whereNull('guest_id');
-                } else {
-                    $cartQuery->where('guest_id', $guestId)->whereNull('user_id');
-                }
-                $cartItems = $cartQuery->get();
+                $cartQuery->where('guest_id', $guestId)->whereNull('user_id');
+            }
+            $cartItems = $cartQuery->get();
 
-                if ($cartItems->isEmpty()) {
-                    DB::rollBack();
-                    return $this->errorResponse(
-                        'Your cart is empty. Please add items to your cart before creating an order.',
-                        404
-                    );
-                }
+            if ($cartItems->isEmpty()) {
+                DB::rollBack();
+                return $this->errorResponse(
+                    'Your cart is empty. Please add items to your cart before creating an order.',
+                    404
+                );
             }
 
             // Group cart items by item_id and price_id to calculate quantity
@@ -229,69 +226,8 @@ class OrderController extends Controller
                 $totalAmount = 0;
             }
 
-            // Handle address
-            $addressId = $request->address_id;
-            if (!$addressId) {
-                // Validate that address fields are provided
-                if (!$request->filled('city_id') || !$request->filled('state') || 
-                    !$request->filled('zip_code') || !$request->filled('street_address')) {
-                    DB::rollBack();
-                    return $this->errorResponse(
-                        'Address information is required. Please provide either address_id or complete address details (city_id, state, zip_code, street_address).',
-                        422
-                    );
-                }
-
-                // Create new address if address_id not provided
-                if ($userId) {
-                    // For registered users, create address record
-                    try {
-                        $address = Address::create([
-                            'user_id' => $userId,
-                            'city_id' => $request->city_id,
-                            'state' => $request->state,
-                            'zip_code' => $request->zip_code,
-                            'street_address' => $request->street_address,
-                        ]);
-                        $addressId = $address->id;
-                    } catch (\Exception $e) {
-                        DB::rollBack();
-                        return $this->errorResponse(
-                            'Failed to create address: ' . $e->getMessage() . '. Please check your address details and try again.',
-                            500
-                        );
-                    }
-                }
-                // For guest orders (no user_id), address_id will remain null
-                // Address information is still required for delivery but not stored in addresses table
-            } else {
-                // Validate address exists
-                $address = Address::find($addressId);
-                if (!$address) {
-                    DB::rollBack();
-                    return $this->errorResponse(
-                        'Address with ID ' . $addressId . ' not found. Please provide a valid address_id or create a new address.',
-                        404
-                    );
-                }
-
-                // Validate address belongs to user if user_id is provided
-                if ($userId && $address->user_id != $userId) {
-                    DB::rollBack();
-                    return $this->errorResponse(
-                        'Address with ID ' . $addressId . ' does not belong to user with ID ' . $userId . '. You can only use your own addresses.',
-                        403
-                    );
-                }
-                // For guest orders, address_id can be provided but we don't validate ownership
-            }
-
-            // Get email from user if not provided
+            // Get email from request (required field)
             $email = $request->email;
-            if (!$email && $userId) {
-                $user = User::find($userId);
-                $email = $user ? $user->email : null;
-            }
 
             // Create order
             try {
@@ -299,7 +235,10 @@ class OrderController extends Controller
                     'user_id' => $userId,
                     'guest_id' => $guestId,
                     'cart_id' => $firstCartId,
-                    'address_id' => $addressId,
+                    'city_id' => $request->city_id,
+                    'state' => $request->state,
+                    'zip_code' => $request->zip_code,
+                    'street_address' => $request->street_address,
                     'total_amount' => round($totalAmount, 2),
                     'status' => Order::STATUS_PENDING,
                     'phone' => $request->phone,
@@ -344,14 +283,173 @@ class OrderController extends Controller
                 );
             }
 
+            // Delete all cart items for the user/guest after order is created
+            // All cart data is now stored in order_items table
+            try {
+                $cartDeleteQuery = Cart::query();
+                if ($userId) {
+                    $cartDeleteQuery->where('user_id', $userId)->whereNull('guest_id');
+                } else {
+                    $cartDeleteQuery->where('guest_id', $guestId)->whereNull('user_id');
+                }
+                $deletedCount = $cartDeleteQuery->delete();
+                
+                if ($deletedCount === 0) {
+                    // This shouldn't happen, but log it (cart items should exist)
+                    // We'll continue anyway since order is created
+                }
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return $this->errorResponse(
+                    'Failed to clear cart after order creation: ' . $e->getMessage() . '. Order was created but cart could not be cleared. Please contact support.',
+                    500
+                );
+            }
+
             DB::commit();
 
             // Load relationships
-            $order->load(['user', 'address.city', 'orderItems.item', 'orderItems.priceModel']);
+            $order->load(['user', 'city']);
 
-            return $this->successResponse([
-                'order' => $order,
-            ], 'Order created successfully', 201);
+            // Build cart details similar to cart API response
+            $items = [];
+            $itemsPrice = 0;
+            $discountCoupon = $cartItems->first()->discount_coupon ?? '';
+
+            // Group cart items by item_id and price_id
+            $groupedCartItems = [];
+            foreach ($cartItems as $cartItem) {
+                if (!$cartItem->item || !$cartItem->price) {
+                    continue;
+                }
+                $key = $cartItem->item_id . '_' . $cartItem->price_id;
+                if (!isset($groupedCartItems[$key])) {
+                    $groupedCartItems[$key] = [
+                        'item' => $cartItem->item,
+                        'price' => $cartItem->price,
+                        'quantity' => 0,
+                    ];
+                }
+                $groupedCartItems[$key]['quantity']++;
+            }
+
+            foreach ($groupedCartItems as $group) {
+                $item = $group['item'];
+                $price = $group['price'];
+                $itemPrice = (float) $price->price;
+                $itemsPrice += $itemPrice * $group['quantity'];
+                
+                $items[] = [
+                    'id' => $item->id,
+                    'title' => $item->name,
+                    'quantity' => $group['quantity'],
+                    'price' => [
+                        'id' => $price->id,
+                        'price' => $itemPrice,
+                    ],
+                ];
+            }
+
+            // Get restaurant data for tax and delivery_charge
+            $restaurant = Restaurant::first();
+            $taxPercentage = $restaurant ? (float) $restaurant->tax : 0;
+            $deliveryCharge = $restaurant ? (float) $restaurant->delivery_charge : 0;
+
+            // Calculate tax price
+            $taxPrice = ($itemsPrice * $taxPercentage) / 100;
+
+            // Calculate discount amount
+            $discountAmount = 0;
+            if (!empty($discountCoupon)) {
+                $discount = Discount::where('code', $discountCoupon)
+                    ->where('status', Discount::STATUS_PUBLISHED)
+                    ->first();
+                
+                if ($discount) {
+                    $discountAmount = (float) $discount->discount_price;
+                    $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
+                    if ($discountAmount > $totalBeforeDiscount) {
+                        $discountAmount = $totalBeforeDiscount;
+                    }
+                }
+            }
+
+            // Calculate payable price
+            $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge - $discountAmount;
+            if ($payablePrice < 0) {
+                $payablePrice = 0;
+            }
+
+            // Build cart_details
+            $cartDetails = [
+                'cart_id' => $firstCartId,
+                'items' => $items,
+                'items_price' => round($itemsPrice, 2),
+                'discount' => [
+                    'coupon' => $discountCoupon,
+                    'amount' => round($discountAmount, 2),
+                ],
+                'charges' => [
+                    'tax' => round($taxPercentage, 2),
+                    'tax_price' => round($taxPrice, 2),
+                    'delivery_charges' => round($deliveryCharge, 2),
+                ],
+                'payable_price' => round($payablePrice, 2),
+            ];
+
+            // Build response
+            $response = [
+                'id' => $order->id,
+                'order_id' => $order->id,
+                'guest_id' => $order->guest_id,
+                'user_info' => $order->user ? [
+                    'id' => $order->user->id,
+                    'name' => $order->user->name,
+                    'email' => $order->user->email,
+                ] : null,
+                'cart_details' => $cartDetails,
+                'phone' => $order->phone,
+                'city_id' => $order->city_id,
+                'city_details' => $order->city ? [
+                    'id' => $order->city->id,
+                    'name' => $order->city->name,
+                    'status' => $order->city->status,
+                ] : null,
+                'state' => $order->state,
+                'zip_code' => $order->zip_code,
+                'street_address' => $order->street_address,
+                'payable_amount' => round($order->total_amount, 2),
+                'status' => $order->status,
+                'created_at' => $order->created_at->toDateTimeString(),
+                'updated_at' => $order->updated_at->toDateTimeString(),
+            ];
+
+            // Send order confirmation email using EmailService
+            try {
+                $emailService = app(EmailService::class);
+                $emailResult = $emailService->send($email, 'order_confirmation', [
+                    'order' => $order,
+                    'orderData' => $response,
+                ]);
+                
+                if (!$emailResult['success']) {
+                    \Log::warning('Order confirmation email failed', [
+                        'order_id' => $order->id,
+                        'email' => $email,
+                        'error' => $emailResult['error'] ?? 'Unknown error',
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Log email error but don't fail the order creation
+                \Log::error('Failed to send order confirmation email', [
+                    'order_id' => $order->id,
+                    'email' => $email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+            return $this->successResponse($response, 'Order created successfully', 201);
 
         } catch (ValidationException $e) {
             DB::rollBack();
@@ -374,6 +472,133 @@ class OrderController extends Controller
             DB::rollBack();
             return $this->errorResponse(
                 'An unexpected error occurred while creating the order: ' . $e->getMessage() . '. Please try again or contact support if the problem persists.',
+                500
+            );
+        }
+    }
+
+    /**
+     * Get order by ID (Public API)
+     */
+    public function show(Request $request, $id)
+    {
+        try {
+            $order = Order::with(['user', 'city', 'orderItems.item', 'orderItems.priceModel'])->find($id);
+
+            if (!$order) {
+                return $this->errorResponse(
+                    'Order with ID ' . $id . ' not found.',
+                    404
+                );
+            }
+
+            // Optional: Validate order belongs to user/guest if provided
+            $userId = $request->query('user_id');
+            $guestId = $request->query('guest_id');
+
+            if ($userId && $order->user_id != $userId) {
+                return $this->errorResponse(
+                    'Order does not belong to the specified user.',
+                    403
+                );
+            }
+
+            if ($guestId && $order->guest_id != $guestId) {
+                return $this->errorResponse(
+                    'Order does not belong to the specified guest.',
+                    403
+                );
+            }
+
+            // Build cart details from order items
+            $items = [];
+            $itemsPrice = 0;
+            $discountCoupon = null;
+            $discountAmount = 0;
+
+            foreach ($order->orderItems as $orderItem) {
+                if ($orderItem->item && $orderItem->priceModel) {
+                    $itemPrice = (float) $orderItem->price;
+                    $itemsPrice += $itemPrice * $orderItem->quantity;
+                    
+                    $items[] = [
+                        'id' => $orderItem->item->id,
+                        'title' => $orderItem->item->name,
+                        'quantity' => $orderItem->quantity,
+                        'price' => [
+                            'id' => $orderItem->priceModel->id,
+                            'price' => $itemPrice,
+                        ],
+                    ];
+                }
+            }
+
+            // Get restaurant data for tax and delivery_charge
+            $restaurant = Restaurant::first();
+            $taxPercentage = $restaurant ? (float) $restaurant->tax : 0;
+            $deliveryCharge = $restaurant ? (float) $restaurant->delivery_charge : 0;
+
+            // Calculate tax price
+            $taxPrice = ($itemsPrice * $taxPercentage) / 100;
+
+            // Calculate discount (if any was applied)
+            // Note: We don't store discount in order_items, so we calculate from total
+            $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
+            if ($totalBeforeDiscount > $order->total_amount) {
+                $discountAmount = $totalBeforeDiscount - $order->total_amount;
+            }
+
+            // Build cart_details
+            $cartDetails = [
+                'cart_id' => $order->cart_id,
+                'items' => $items,
+                'items_price' => round($itemsPrice, 2),
+                'discount' => [
+                    'coupon' => $discountCoupon,
+                    'amount' => round($discountAmount, 2),
+                ],
+                'charges' => [
+                    'tax' => round($taxPercentage, 2),
+                    'tax_price' => round($taxPrice, 2),
+                    'delivery_charges' => round($deliveryCharge, 2),
+                ],
+                'payable_price' => round($order->total_amount, 2),
+            ];
+
+            // Build response
+            $response = [
+                'id' => $order->id,
+                'order_id' => $order->id,
+                'guest_id' => $order->guest_id,
+                'user_info' => $order->user ? [
+                    'id' => $order->user->id,
+                    'name' => $order->user->name,
+                    'email' => $order->user->email,
+                ] : null,
+                'cart_details' => $cartDetails,
+                'phone' => $order->phone,
+                'email' => $order->email,
+                'city_id' => $order->city_id,
+                'city_details' => $order->city ? [
+                    'id' => $order->city->id,
+                    'name' => $order->city->name,
+                    'status' => $order->city->status,
+                ] : null,
+                'state' => $order->state,
+                'zip_code' => $order->zip_code,
+                'street_address' => $order->street_address,
+                'payable_amount' => round($order->total_amount, 2),
+                'status' => $order->status,
+                'notes' => $order->notes,
+                'created_at' => $order->created_at->toDateTimeString(),
+                'updated_at' => $order->updated_at->toDateTimeString(),
+            ];
+
+            return $this->successResponse($response, 'Order retrieved successfully', 200);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to retrieve order: ' . $e->getMessage(),
                 500
             );
         }

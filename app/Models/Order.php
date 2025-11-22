@@ -26,7 +26,10 @@ class Order extends Model
         'user_id',
         'guest_id',
         'cart_id',
-        'address_id',
+        'city_id',
+        'state',
+        'zip_code',
+        'street_address',
         'total_amount',
         'status',
         'phone',
@@ -55,11 +58,11 @@ class Order extends Model
     }
 
     /**
-     * Get the address for the order.
+     * Get the city for the order.
      */
-    public function address()
+    public function city()
     {
-        return $this->belongsTo(Address::class);
+        return $this->belongsTo(City::class);
     }
 
     /**
