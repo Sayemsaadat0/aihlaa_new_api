@@ -25,17 +25,20 @@ class PriceController extends Controller
 
             $request->validate([
                 'price' => 'required|numeric|min:0|max:99999999.99',
+                'size' => 'nullable|string|max:255',
             ]);
 
             $price = ItemPrice::create([
                 'item_id' => $itemId,
                 'price' => $request->price,
+                'size' => $request->size,
             ]);
 
             return $this->successResponse([
                 'price' => [
                     'id' => $price->id,
                     'price' => (float) $price->price,
+                    'size' => $price->size,
                 ],
             ], 'Price created successfully', 201);
         } catch (ValidationException $e) {
@@ -71,16 +74,19 @@ class PriceController extends Controller
 
             $request->validate([
                 'price' => 'required|numeric|min:0|max:99999999.99',
+                'size' => 'nullable|string|max:255',
             ]);
 
             $price->update([
                 'price' => $request->price,
+                'size' => $request->size,
             ]);
 
             return $this->successResponse([
                 'price' => [
                     'id' => $price->id,
                     'price' => (float) $price->price,
+                    'size' => $price->size,
                 ],
             ], 'Price updated successfully');
         } catch (ValidationException $e) {

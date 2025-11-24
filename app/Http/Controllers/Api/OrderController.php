@@ -241,6 +241,7 @@ class OrderController extends Controller
                     'street_address' => $request->street_address,
                     'total_amount' => round($totalAmount, 2),
                     'status' => Order::STATUS_PENDING,
+                    'payment_status' => Order::PAYMENT_STATUS_UNPAID,
                     'phone' => $request->phone,
                     'email' => $email,
                     'notes' => $request->notes,
@@ -346,6 +347,7 @@ class OrderController extends Controller
                     'price' => [
                         'id' => $price->id,
                         'price' => $itemPrice,
+                        'size' => $price->size,
                     ],
                 ];
             }
@@ -402,6 +404,7 @@ class OrderController extends Controller
                 'id' => $order->id,
                 'order_id' => $order->id,
                 'guest_id' => $order->guest_id,
+                'payment_status' => $order->payment_status,
                 'user_info' => $order->user ? [
                     'id' => $order->user->id,
                     'name' => $order->user->name,
@@ -528,6 +531,7 @@ class OrderController extends Controller
                         'price' => [
                             'id' => $orderItem->priceModel->id,
                             'price' => $itemPrice,
+                            'size' => $orderItem->priceModel->size,
                         ],
                     ];
                 }
@@ -570,6 +574,7 @@ class OrderController extends Controller
                 'id' => $order->id,
                 'order_id' => $order->id,
                 'guest_id' => $order->guest_id,
+                'payment_status' => $order->payment_status,
                 'user_info' => $order->user ? [
                     'id' => $order->user->id,
                     'name' => $order->user->name,
@@ -599,6 +604,205 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse(
                 'Failed to retrieve order: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * List orders with optional filters (Admin only)
+     */
+    public function index(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'user_id' => 'sometimes|integer|exists:users,id',
+                'guest_id' => 'sometimes|string|max:255',
+                'status' => 'sometimes|in:' . implode(',', [
+                    Order::STATUS_PENDING,
+                    Order::STATUS_COOKING,
+                    Order::STATUS_ON_THE_WAY,
+                    Order::STATUS_DELIVERED,
+                ]),
+                'per_page' => 'sometimes|integer|min:1|max:100',
+            ]);
+
+            $ordersQuery = Order::with([
+                    'user:id,name,email',
+                    'city:id,name,status',
+                    'orderItems.item:id,name,details',
+                    'orderItems.priceModel:id,item_id,price,size',
+                ])
+                ->withCount('orderItems')
+                ->orderByDesc('created_at');
+
+            if (isset($validated['user_id'])) {
+                $ordersQuery->where('user_id', $validated['user_id']);
+            }
+
+            if (isset($validated['guest_id'])) {
+                $ordersQuery->where('guest_id', $validated['guest_id']);
+            }
+
+            if (isset($validated['status'])) {
+                $ordersQuery->where('status', $validated['status']);
+            }
+
+            $perPage = $validated['per_page'] ?? 15;
+            $orders = $ordersQuery->paginate($perPage);
+
+            $restaurant = Restaurant::first();
+            $taxPercentage = $restaurant ? (float) $restaurant->tax : 0;
+            $deliveryCharge = $restaurant ? (float) $restaurant->delivery_charge : 0;
+
+            $ordersCollection = $orders->getCollection()->map(function ($order) use ($taxPercentage, $deliveryCharge) {
+                $items = $order->orderItems->map(function ($orderItem) {
+                    $itemPrice = (float) $orderItem->price;
+
+                    return [
+                        'id' => $orderItem->item?->id,
+                        'title' => $orderItem->item?->name,
+                        'description' => $orderItem->item?->details,
+                        'quantity' => $orderItem->quantity,
+                        'price' => [
+                            'id' => $orderItem->priceModel?->id,
+                            'price' => $itemPrice,
+                            'size' => $orderItem->priceModel?->size,
+                        ],
+                    ];
+                })->values();
+
+                $itemsPrice = $order->orderItems->reduce(function ($carry, $orderItem) {
+                    return $carry + ((float) $orderItem->price * $orderItem->quantity);
+                }, 0);
+
+                $taxPrice = ($itemsPrice * $taxPercentage) / 100;
+                $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
+                $discountAmount = 0;
+                if ($totalBeforeDiscount > (float) $order->total_amount) {
+                    $discountAmount = $totalBeforeDiscount - (float) $order->total_amount;
+                }
+
+                return [
+                    'id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'guest_id' => $order->guest_id,
+                    'cart_id' => $order->cart_id,
+                    'total_amount' => (float) $order->total_amount,
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'phone' => $order->phone,
+                    'email' => $order->email,
+                    'notes' => $order->notes,
+                    'created_at' => $order->created_at?->toDateTimeString(),
+                    'updated_at' => $order->updated_at?->toDateTimeString(),
+                    'user' => $order->user ? [
+                        'id' => $order->user->id,
+                        'name' => $order->user->name,
+                        'email' => $order->user->email,
+                    ] : null,
+                    'address' => [
+                        'state' => $order->state,
+                        'zip_code' => $order->zip_code,
+                        'street_address' => $order->street_address,
+                        'city' => $order->city ? [
+                            'id' => $order->city->id,
+                            'name' => $order->city->name,
+                            'status' => $order->city->status,
+                        ] : null,
+                    ],
+                    'order_items' => $items,
+                    'summary' => [
+                        'items_price' => round($itemsPrice, 2),
+                        'charges' => [
+                            'tax' => round($taxPercentage, 2),
+                            'tax_price' => round($taxPrice, 2),
+                            'delivery_charges' => round($deliveryCharge, 2),
+                            'discount' => round($discountAmount, 2),
+                        ],
+                        'payable_price' => round((float) $order->total_amount, 2),
+                    ],
+                    'order_items_count' => $order->order_items_count,
+                ];
+            })->values();
+
+            $pagination = [
+                'current_page' => $orders->currentPage(),
+                'per_page' => (int) $orders->perPage(),
+                'total' => $orders->total(),
+                'last_page' => $orders->lastPage(),
+                'from' => $orders->firstItem(),
+                'to' => $orders->lastItem(),
+            ];
+
+            return $this->successResponse([
+                'orders' => $ordersCollection,
+                'pagination' => $pagination,
+            ], 'Orders retrieved successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to retrieve orders: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * Update order status or payment status (Admin only)
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'sometimes|in:' . implode(',', [
+                    Order::STATUS_PENDING,
+                    Order::STATUS_COOKING,
+                    Order::STATUS_ON_THE_WAY,
+                    Order::STATUS_DELIVERED,
+                ]),
+                'payment_status' => 'sometimes|in:' . implode(',', [
+                    Order::PAYMENT_STATUS_UNPAID,
+                    Order::PAYMENT_STATUS_PAID,
+                ]),
+            ]);
+
+            if (!$request->hasAny(['status', 'payment_status'])) {
+                return $this->errorResponse(
+                    'Please provide at least one field: status or payment_status.',
+                    422
+                );
+            }
+
+            $order = Order::find($id);
+
+            if (!$order) {
+                return $this->notFoundResponse('Order');
+            }
+
+            $updates = array_filter([
+                'status' => $validated['status'] ?? null,
+                'payment_status' => $validated['payment_status'] ?? null,
+            ], function ($value) {
+                return $value !== null;
+            });
+
+            $order->update($updates);
+
+            return $this->successResponse([
+                'order' => [
+                    'id' => $order->id,
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'updated_at' => $order->updated_at?->toDateTimeString(),
+                ],
+            ], 'Order updated successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to update order: ' . $e->getMessage(),
                 500
             );
         }

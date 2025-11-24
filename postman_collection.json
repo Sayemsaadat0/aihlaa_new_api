@@ -590,7 +590,7 @@
 								}
 							]
 						},
-						"description": "Get items grouped by category. Items now return 'prices' as an array instead of a single 'price' field."
+						"description": "Get items grouped by category. Items return 'prices' as an array. Each price object includes 'id', 'price', and 'size' (nullable string) fields."
 					}
 				}
 			]
@@ -999,8 +999,9 @@
 		{
 			"name": "Item Prices",
 			"item": [
-				{ "name": "Create Price (Admin)", "request": { "method":"POST","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 99.99\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices","host":["{{base_url}}"],"path":["api","items","1","prices"]} } },
-				{ "name": "Update Price (Admin)", "request": { "method":"PUT","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 149.99\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices/1","host":["{{base_url}}"],"path":["api","items","1","prices","1"]} } },
+				{ "name": "Create Price (Admin)", "request": { "method":"POST","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 99.99,\n  \"size\": \"Large\"\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices","host":["{{base_url}}"],"path":["api","items","1","prices"]}, "description": "Create a new price for an item. 'size' is optional (nullable string)." } },
+				{ "name": "Create Price Without Size (Admin)", "request": { "method":"POST","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 99.99\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices","host":["{{base_url}}"],"path":["api","items","1","prices"]}, "description": "Create price without size (size will be null)." } },
+				{ "name": "Update Price (Admin)", "request": { "method":"PUT","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"price\": 149.99,\n  \"size\": \"Extra Large\"\n}"}, "url": {"raw":"{{base_url}}/api/items/1/prices/1","host":["{{base_url}}"],"path":["api","items","1","prices","1"]}, "description": "Update price. 'size' is optional (nullable string)." } },
 				{ "name": "Delete Price (Admin)", "request": { "method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": {"raw":"{{base_url}}/api/items/1/prices/1","host":["{{base_url}}"],"path":["api","items","1","prices","1"]} } }
 			]
 		},
@@ -1287,10 +1288,15 @@
 					}
 				},
 				{
-					"name": "Get All Orders (Public)",
+					"name": "Get All Orders (Admin)",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
 						"url": {
 							"raw": "{{base_url}}/api/orders",
 							"host": ["{{base_url}}"],
@@ -1328,7 +1334,33 @@
 								}
 							]
 						},
-						"description": "Get list of orders with optional filters. NOTE: This endpoint needs to be implemented."
+						"description": "Admin-only paginated list of orders with optional filters (user_id, guest_id, status). Every order now includes order_items plus a summary block (items_price, tax, delivery, discount, payable_total) so you can inspect the full breakdown without extra calls. Requires a valid admin token."
+					}
+				},
+				{
+					"name": "Update Order Status (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"cooking\",\n  \"payment_status\": \"paid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", "1"]
+						},
+						"description": "Admin-only endpoint to update an order's workflow status and/or payment status. Provide either field (or both). Uses the same status constants documented in order_api_examples.txt."
 					}
 				}
 			]
@@ -1348,7 +1380,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"to\": \"customer@example.com\",\n  \"type\": \"order_confirmation\",\n  \"data\": {\n    \"order\": {\n      \"id\": 1,\n      \"status\": \"pending\",\n      \"total_amount\": 71.00\n    },\n    \"orderData\": {\n      \"id\": 1,\n      \"order_id\": 1,\n      \"cart_details\": {\n        \"items\": [\n          {\n            \"id\": 1,\n            \"title\": \"Sample Item\",\n            \"quantity\": 2,\n            \"price\": {\n              \"id\": 1,\n              \"price\": 10.00\n            }\n          }\n        ],\n        \"items_price\": 20.00,\n        \"discount\": {\n          \"coupon\": \"SAVE10\",\n          \"amount\": 10.00\n        },\n        \"charges\": {\n          \"tax\": 5.00,\n          \"tax_price\": 1.00,\n          \"delivery_charges\": 50.00\n        },\n        \"payable_price\": 71.00\n      },\n      \"payable_amount\": 71.00,\n      \"status\": \"pending\"\n    }\n  }\n}"
+							"raw": "{\n  \"to\": \"customer@example.com\",\n  \"type\": \"order_confirmation\",\n  \"data\": {\n    \"order\": {\n      \"id\": 1,\n      \"status\": \"pending\",\n      \"total_amount\": 71.00\n    },\n    \"orderData\": {\n      \"id\": 1,\n      \"order_id\": 1,\n      \"cart_details\": {\n        \"items\": [\n          {\n            \"id\": 1,\n            \"title\": \"Sample Item\",\n            \"quantity\": 2,\n            \"price\": {\n              \"id\": 1,\n              \"price\": 10.00,\n              \"size\": \"Large\"\n            }\n          }\n        ],\n        \"items_price\": 20.00,\n        \"discount\": {\n          \"coupon\": \"SAVE10\",\n          \"amount\": 10.00\n        },\n        \"charges\": {\n          \"tax\": 5.00,\n          \"tax_price\": 1.00,\n          \"delivery_charges\": 50.00\n        },\n        \"payable_price\": 71.00\n      },\n      \"payable_amount\": 71.00,\n      \"status\": \"pending\"\n    }\n  }\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/emails/send",

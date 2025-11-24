@@ -18,6 +18,12 @@ class Order extends Model
     const STATUS_DELIVERED = 'delivered';
 
     /**
+     * Payment status constants
+     */
+    const PAYMENT_STATUS_UNPAID = 'unpaid';
+    const PAYMENT_STATUS_PAID = 'paid';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -32,6 +38,7 @@ class Order extends Model
         'street_address',
         'total_amount',
         'status',
+        'payment_status',
         'phone',
         'email',
         'notes',

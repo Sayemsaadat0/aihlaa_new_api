@@ -1,0 +1,20 @@
+Build an API controller (call it VisitorsController) that manages anonymous visitor tracking.
+Add endpoints:
+GET /api/visitors → return all visitors ordered by latest.
+POST /api/visitors → create or update a visitor session.
+PATCH /api/visitors/{visitor_id} → update metadata and append page visits.
+GET /api/visitors/{visitor_id} → fetch a single visitor profile.
+GET /api/visitors/analytics → return top page, section, and device stats.
+For create/update requests:
+Validate visitor_id, optional ref, device_type, browser, and page_visits array (page_name, optional section_name, in_time, out_time).
+Compute each visit’s total_duration = out_time - in_time.
+If visitor exists, increment session number and update; otherwise create with session 1.
+When updating with new page visits, append them to the existing collection before saving.
+Responses:
+JSON with success, message, and data or errors; use 200/201/404/422/500 status codes as appropriate.
+For analytics, aggregate all stored page_visits to determine most visited page, most visited section, and counts of device_type === 'mobile' vs desktop.
+Model requirements:
+Provide helpers like findByVisitorId, getLatestSessionNumber, and appendPageVisit to encapsulate DB logic.
+Ensure page_visits column can store JSON and is cast to arrays.
+Error handling:
+Wrap each operation in try/catch, return descriptive messages, and surface validation errors.

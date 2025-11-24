@@ -12,6 +12,7 @@ class ItemPrice extends Model
     protected $fillable = [
         'item_id',
         'price',
+        'size',
     ];
 
     protected function casts(): array

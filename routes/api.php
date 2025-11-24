@@ -134,6 +134,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/carts', [CartController::class, 'getAllCarts']);
     });
     
+    // Order management routes (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::put('/orders/{id}', [OrderController::class, 'updateStatus']);
+    });
+    
     // Item management routes (Admin only - require authentication + admin role)
     Route::middleware('role:admin')->group(function () {
         Route::post('/items', [ItemController::class, 'store']);

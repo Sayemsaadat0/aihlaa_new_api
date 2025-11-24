@@ -1,521 +1,67 @@
-==========================================
-ORDER API DOCUMENTATION & EXAMPLES
-==========================================
+ORDER API QUICK REFERENCE
+=========================
 
-All Order APIs are PUBLIC - No Authorization Required
+Each entry below follows the same three-part structure so you can skim
+quickly while building or debugging.
 
-==========================================
-1. CREATE ORDER 
-==========================================
-
+----------------------------------------------------------------------
 Endpoint: POST /api/orders
-Method: POST
-Content-Type: application/json
-Authorization: Not Required (Public API)
+Purpose : Convert the customer’s cart into a finalized order. Supports
+          both logged-in users (`user_id`) and guests (`guest_id`),
+          copies address info, applies tax/fees/discounts, creates
+          `order_items`, empties the cart, and triggers confirmation
+          emails.
+Method  : POST
 
-------------------------------------------
-Request Body Examples:
-------------------------------------------
-
-Example 1: Using user_id with existing address_id
-{
-  "user_id": 1,
-  "cart_id": 5,
-  "address_id": 5,
-  "phone": "+1-555-1234",
-  "email": "user@example.com",
-  "notes": "Please ring the doorbell"
-}
-
-Example 2: Using user_id with new address (will create address)
-{
-  "user_id": 1,
-  "cart_id": 5,
-  "city_id": 1,
-  "state": "California",
-  "zip_code": "90210",
-  "street_address": "123 Main Street, Apt 4B",
-  "phone": "+1-555-1234",
-  "email": "user@example.com",
-  "notes": "Leave at door"
-}
-
-Example 3: Using guest_id with new address (all cart items)
-{
-  "guest_id": "guest123",
-  "city_id": 1,
-  "state": "New York",
-  "zip_code": "10001",
-  "street_address": "456 Broadway, Suite 200",
-  "phone": "+1-555-5678",
-  "email": "guest@example.com",
-  "notes": "Call when arrived"
-}
-
-Example 4: Using user_id with all cart items (no cart_id specified)
-{
-  "user_id": 1,
-  "address_id": 5,
-  "phone": "+1-555-1234",
-  "notes": "Special delivery instructions"
-}
-
-Example 5: Using guest_id with single cart_id
-{
-  "guest_id": "guest456",
-  "cart_id": 10,
-  "city_id": 2,
-  "state": "Texas",
-  "zip_code": "75001",
-  "street_address": "789 Oak Avenue",
-  "phone": "+1-555-9999"
-}
-
-------------------------------------------
-Request Fields:
-------------------------------------------
-
-Required Fields:
-- user_id (integer, optional): Required if guest_id is not provided. Must exist in users table
-- guest_id (string, optional): Required if user_id is not provided. Max 255 characters
-- phone (string, required): Contact phone number for delivery. Max 255 characters
-
-Optional Fields:
-- cart_id (integer, optional): Single cart entry ID. If not provided, all cart items for user/guest will be used
-- address_id (integer, optional): Existing address ID. Required if new address fields are not provided
-- city_id (integer, optional): Required if address_id is not provided. Must exist in cities table
-- state (string, optional): Required if address_id is not provided. Max 255 characters
-- zip_code (string, optional): Required if address_id is not provided. Max 50 characters
-- street_address (string, optional): Required if address_id is not provided
-- email (string, optional): Email address. Will be auto-filled from user if user_id is provided and email not given
-- notes (string, optional): Special delivery instructions or order notes
-
-------------------------------------------
-Success Response (201):
-------------------------------------------
-
-{
-  "success": true,
-  "status": 201,
-  "message": "Order created successfully",
-  "data": {
-    "order": {
-      "id": 1,
-      "user_id": 1,
-      "guest_id": null,
-      "cart_id": 5,
-      "address_id": 5,
-      "total_amount": "125.50",
-      "status": "pending",
-      "phone": "+1-555-1234",
-      "email": "user@example.com",
-      "notes": "Please ring the doorbell",
-      "created_at": "2025-11-16T08:30:00.000000Z",
-      "updated_at": "2025-11-16T08:30:00.000000Z",
-      "user": {
-        "id": 1,
-        "name": "John Doe",
-        "email": "user@example.com",
-        "role": "user"
-      },
-      "address": {
-        "id": 5,
-        "user_id": 1,
-        "city_id": 1,
-        "state": "California",
-        "zip_code": "90210",
-        "street_address": "123 Main Street, Apt 4B",
-        "city": {
-          "id": 1,
-          "name": "Los Angeles"
-        }
-      },
-      "order_items": [
-        {
-          "id": 1,
-          "order_id": 1,
-          "item_id": 3,
-          "price_id": 5,
-          "quantity": 2,
-          "price": "25.00",
-          "created_at": "2025-11-16T08:30:00.000000Z",
-          "updated_at": "2025-11-16T08:30:00.000000Z",
-          "item": {
-            "id": 3,
-            "name": "Pizza Margherita",
-            "description": "Classic pizza with tomato and mozzarella"
-          },
-          "price_model": {
-            "id": 5,
-            "item_id": 3,
-            "price": "25.00"
-          }
-        },
-        {
-          "id": 2,
-          "order_id": 1,
-          "item_id": 7,
-          "price_id": 12,
-          "quantity": 1,
-          "price": "75.50",
-          "created_at": "2025-11-16T08:30:00.000000Z",
-          "updated_at": "2025-11-16T08:30:00.000000Z",
-          "item": {
-            "id": 7,
-            "name": "Burger Deluxe",
-            "description": "Premium burger with all toppings"
-          },
-          "price_model": {
-            "id": 12,
-            "item_id": 7,
-            "price": "75.50"
-          }
-        }
-      ]
-    }
-  }
-}
-
-------------------------------------------
-Error Response Examples:
-------------------------------------------
-
-Error 422 - Validation Error:
-{
-  "success": false,
-  "status": 422,
-  "message": "Validation failed",
-  "errors": {
-    "phone": [
-      "Phone number is required for order delivery."
-    ],
-    "city_id": [
-      "City ID is required when address_id is not provided."
-    ]
-  }
-}
-
-Error 404 - Cart Not Found:
-{
-  "success": false,
-  "status": 404,
-  "message": "Cart item with ID 999 not found. Please provide a valid cart_id."
-}
-
-Error 404 - Empty Cart:
-{
-  "success": false,
-  "status": 404,
-  "message": "Your cart is empty. Please add items to your cart before creating an order."
-}
-
-Error 403 - Cart Ownership:
-{
-  "success": false,
-  "status": 403,
-  "message": "Cart item with ID 5 does not belong to user with ID 1. You can only create orders from your own cart items."
-}
-
-Error 404 - Address Not Found:
-{
-  "success": false,
-  "status": 404,
-  "message": "Address with ID 10 not found. Please provide a valid address_id or create a new address."
-}
-
-Error 404 - Restaurant Not Configured:
-{
-  "success": false,
-  "status": 404,
-  "message": "Restaurant configuration is not set up. Please contact the administrator to configure restaurant settings before placing an order."
-}
-
-Error 500 - Database Error:
-{
-  "success": false,
-  "status": 500,
-  "message": "Database error occurred while creating the order. Please try again or contact support if the problem persists."
-}
-
-==========================================
-2. GET ORDER (Single Order)
-==========================================
-
-NOTE: This endpoint needs to be implemented. Below is the expected structure.
-
+----------------------------------------------------------------------
 Endpoint: GET /api/orders/{id}
-Method: GET
-Content-Type: application/json
-Authorization: Not Required (Public API)
+Purpose : Fetch the full detail of a single order (same data shape as
+          the create response). Will accept optional `user_id` or
+          `guest_id` query params to ensure the requester owns the
+          order. **Status:** planned/not implemented yet.
+Method  : GET
 
-------------------------------------------
-URL Parameters:
-------------------------------------------
-- id (integer, required): Order ID
-
-------------------------------------------
-Query Parameters (Optional):
-------------------------------------------
-- user_id (integer, optional): Filter by user_id (for validation)
-- guest_id (string, optional): Filter by guest_id (for validation)
-
-------------------------------------------
-Success Response (200):
-------------------------------------------
-
-{
-  "success": true,
-  "status": 200,
-  "message": "Order retrieved successfully",
-  "data": {
-    "order": {
-      "id": 1,
-      "user_id": 1,
-      "guest_id": null,
-      "cart_id": 5,
-      "address_id": 5,
-      "total_amount": "125.50",
-      "status": "pending",
-      "phone": "+1-555-1234",
-      "email": "user@example.com",
-      "notes": "Please ring the doorbell",
-      "created_at": "2025-11-16T08:30:00.000000Z",
-      "updated_at": "2025-11-16T08:30:00.000000Z",
-      "user": {
-        "id": 1,
-        "name": "John Doe",
-        "email": "user@example.com",
-        "role": "user"
-      },
-      "address": {
-        "id": 5,
-        "user_id": 1,
-        "city_id": 1,
-        "state": "California",
-        "zip_code": "90210",
-        "street_address": "123 Main Street, Apt 4B",
-        "city": {
-          "id": 1,
-          "name": "Los Angeles"
-        }
-      },
-      "order_items": [
-        {
-          "id": 1,
-          "order_id": 1,
-          "item_id": 3,
-          "price_id": 5,
-          "quantity": 2,
-          "price": "25.00",
-          "created_at": "2025-11-16T08:30:00.000000Z",
-          "updated_at": "2025-11-16T08:30:00.000000Z",
-          "item": {
-            "id": 3,
-            "name": "Pizza Margherita",
-            "description": "Classic pizza with tomato and mozzarella",
-            "category_id": 1
-          },
-          "price_model": {
-            "id": 5,
-            "item_id": 3,
-            "price": "25.00"
-          }
-        },
-        {
-          "id": 2,
-          "order_id": 1,
-          "item_id": 7,
-          "price_id": 12,
-          "quantity": 1,
-          "price": "75.50",
-          "created_at": "2025-11-16T08:30:00.000000Z",
-          "updated_at": "2025-11-16T08:30:00.000000Z",
-          "item": {
-            "id": 7,
-            "name": "Burger Deluxe",
-            "description": "Premium burger with all toppings",
-            "category_id": 2
-          },
-          "price_model": {
-            "id": 12,
-            "item_id": 7,
-            "price": "75.50"
-          }
-        }
-      ]
-    }
-  }
-}
-
-------------------------------------------
-Error Response Examples:
-------------------------------------------
-
-Error 404 - Order Not Found:
-{
-  "success": false,
-  "status": 404,
-  "message": "Order with ID 999 not found."
-}
-
-Error 403 - Access Denied:
-{
-  "success": false,
-  "status": 403,
-  "message": "You do not have permission to view this order."
-}
-
-==========================================
-3. GET ORDERS (List Orders)
-==========================================
-
-NOTE: This endpoint needs to be implemented. Below is the expected structure.
-
+----------------------------------------------------------------------
 Endpoint: GET /api/orders
-Method: GET
-Content-Type: application/json
-Authorization: Not Required (Public API)
+Purpose : Admin-only listing of orders with filtering (`user_id`,
+          `guest_id`, `status`) and pagination (`page`, `per_page`).
+          Each record now ships with `order_items` (full cart lines)
+          plus a `summary` block that spells out items_price, tax,
+          delivery, discount, and payable total. Requires
+          `Authorization: Bearer {{admin_token}}`.
+Method  : GET
 
-------------------------------------------
-Query Parameters:
-------------------------------------------
-- user_id (integer, optional): Filter orders by user_id
-- guest_id (string, optional): Filter orders by guest_id
-- status (string, optional): Filter by status (pending, cooking, on_the_way, delivered)
-- page (integer, optional): Page number for pagination (default: 1)
-- per_page (integer, optional): Items per page (default: 15)
+----------------------------------------------------------------------
+Endpoint: PUT /api/orders/{id}
+Purpose : Admin-only status update. Accepts `status` (pending,
+          cooking, on_the_way, delivered) and/or `payment_status`
+          (paid, unpaid). Use this to advance kitchen workflow or
+          mark payments as settled. Requires `Authorization: Bearer
+          {{admin_token}}`.
+Method  : PUT
 
-------------------------------------------
-Example Request:
-------------------------------------------
-GET /api/orders?user_id=1&status=pending&page=1&per_page=10
+----------------------------------------------------------------------
+Endpoint: n/a (status helper)
+Purpose : Reference for allowed order statuses used across endpoints.
+          - `pending`   → order created, waiting for kitchen.
+          - `cooking`   → order accepted, being prepared.
+          - `on_the_way`→ rider picked up, en route to customer.
+          - `delivered` → customer received the order.
+          Payment status:
+           - `unpaid` (default) → new orders.
+           - `paid` → marked after settlement.
+Method  : (informational)
 
-------------------------------------------
-Success Response (200):
-------------------------------------------
-
-{
-  "success": true,
-  "status": 200,
-  "message": "Orders retrieved successfully",
-  "data": {
-    "orders": [
-      {
-        "id": 1,
-        "user_id": 1,
-        "guest_id": null,
-        "cart_id": 5,
-        "address_id": 5,
-        "total_amount": "125.50",
-        "status": "pending",
-        "phone": "+1-555-1234",
-        "email": "user@example.com",
-        "notes": "Please ring the doorbell",
-        "created_at": "2025-11-16T08:30:00.000000Z",
-        "updated_at": "2025-11-16T08:30:00.000000Z",
-        "user": {
-          "id": 1,
-          "name": "John Doe",
-          "email": "user@example.com"
-        },
-        "address": {
-          "id": 5,
-          "state": "California",
-          "zip_code": "90210",
-          "street_address": "123 Main Street, Apt 4B",
-          "city": {
-            "id": 1,
-            "name": "Los Angeles"
-          }
-        },
-        "order_items_count": 2
-      },
-      {
-        "id": 2,
-        "user_id": 1,
-        "guest_id": null,
-        "cart_id": 8,
-        "address_id": 5,
-        "total_amount": "89.99",
-        "status": "cooking",
-        "phone": "+1-555-1234",
-        "email": "user@example.com",
-        "notes": null,
-        "created_at": "2025-11-15T14:20:00.000000Z",
-        "updated_at": "2025-11-16T09:15:00.000000Z",
-        "user": {
-          "id": 1,
-          "name": "John Doe",
-          "email": "user@example.com"
-        },
-        "address": {
-          "id": 5,
-          "state": "California",
-          "zip_code": "90210",
-          "street_address": "123 Main Street, Apt 4B",
-          "city": {
-            "id": 1,
-            "name": "Los Angeles"
-          }
-        },
-        "order_items_count": 3
-      }
-    ],
-    "pagination": {
-      "current_page": 1,
-      "per_page": 10,
-      "total": 2,
-      "last_page": 1,
-      "from": 1,
-      "to": 2
-    }
-  }
-}
-
-------------------------------------------
-Error Response Examples:
-------------------------------------------
-
-Error 422 - Invalid Parameters:
-{
-  "success": false,
-  "status": 422,
-  "message": "Invalid status value. Allowed values: pending, cooking, on_the_way, delivered"
-}
-
-==========================================
-ORDER STATUS VALUES:
-==========================================
-
-- pending: Order has been created and is waiting to be processed
-- cooking: Order is being prepared
-- on_the_way: Order is out for delivery
-- delivered: Order has been delivered
-
-==========================================
-NOTES:
-==========================================
-
-1. When creating an order:
-   - If cart_id is not provided, all cart items for the user/guest will be used
-   - Tax and delivery charges are automatically calculated from restaurant settings
-   - Discount codes from cart are automatically applied
-   - Total amount = items_price + tax + delivery_charge - discount_amount
-
-2. Address handling:
-   - For registered users (user_id provided): Address will be created and saved if address_id is not provided
-   - For guest orders (guest_id only): Address information is required but address_id will be null
-
-3. Cart items:
-   - Items are grouped by item_id and price_id to calculate quantities
-   - Invalid or deleted items/prices are skipped with appropriate warnings
-
-4. Email:
-   - If email is not provided and user_id is given, email will be automatically fetched from user account
-
-5. Order items:
-   - Price is stored as a snapshot at the time of order creation
-   - This ensures order history remains accurate even if prices change later
-
-==========================================
-
+----------------------------------------------------------------------
+Endpoint: n/a (system behavior notes)
+Purpose : Highlights of internal logic that apply to every order call:
+          - Cart rows are grouped by `item_id + price_id` to compute
+            quantities.
+          - Discounts live on cart rows and are capped to the subtotal.
+          - `order_items.price` stores a snapshot so history survives
+            future menu changes.
+          - Responses always use the `{success,status,message,data}`
+            envelope for consistency.
+          - Every new order is created with `payment_status = unpaid`;
+            admins flip it to `paid` via the dedicated update endpoint.
+Method  : (informational)

@@ -76,7 +76,7 @@ class ItemController extends Controller
             if ($hasPrice === '1') {
                 $items = $items->filter(function ($item) {
                     return $item->prices->isNotEmpty();
-                });
+                })->values(); // Reset array keys to ensure proper array structure
             }
             
             $items = $items->map(function ($item) {
@@ -96,10 +96,11 @@ class ItemController extends Controller
                         return [
                             'id' => $price->id,
                             'price' => (float) $price->price,
+                            'size' => $price->size,
                         ];
-                    }),
+                    })->values(), // Reset array keys for prices
                 ];
-            });
+            })->values(); // Reset array keys to ensure proper array structure
             
             return $this->successResponse([
                 'items' => $items,
@@ -293,6 +294,7 @@ class ItemController extends Controller
                         return [
                             'id' => $price->id,
                             'price' => (float) $price->price,
+                            'size' => $price->size,
                         ];
                     }),
                 ],
@@ -451,6 +453,7 @@ class ItemController extends Controller
                                 return [
                                     'id' => $price->id,
                                     'price' => (float) $price->price,
+                                    'size' => $price->size,
                                 ];
                             }),
                             'thumbnail' => $this->getThumbnailUrl($item->thumbnail),

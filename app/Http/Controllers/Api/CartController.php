@@ -98,6 +98,7 @@ class CartController extends Controller
                         'price' => [
                             'id' => $price->id,
                             'price' => $itemPrice,
+                            'size' => $price->size,
                         ],
                     ];
                 }
@@ -315,6 +316,7 @@ class CartController extends Controller
                     'price' => [
                         'id' => $group['price']->id,
                         'price' => $itemPrice,
+                        'size' => $group['price']->size,
                     ],
                 ];
             }
@@ -887,6 +889,7 @@ class CartController extends Controller
                         'price' => [
                             'id' => $price->id,
                             'price' => $itemPrice,
+                            'size' => $price->size,
                         ],
                     ];
                 }
@@ -1036,6 +1039,7 @@ class CartController extends Controller
                         'price' => [
                             'id' => $price->id,
                             'price' => $itemPrice,
+                            'size' => $price->size,
                         ],
                     ];
                 }
