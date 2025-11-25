@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\EmailController;
+use App\Http\Controllers\Api\VisitorsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,12 @@ Route::get('/orders/{id}', [OrderController::class, 'show']);
 // Public email routes
 Route::post('/v1/emails/send', [EmailController::class, 'send']);
 Route::get('/v1/emails/types', [EmailController::class, 'getTypes']);
+
+// Public visitor tracking routes
+Route::post('/visitors', [VisitorsController::class, 'store']);
+Route::get('/visitors/analytics', [VisitorsController::class, 'getAnalytics']);
+Route::patch('/visitors/{visitor_id}', [VisitorsController::class, 'update']);
+Route::get('/visitors/{visitor_id}', [VisitorsController::class, 'show']);
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
@@ -166,6 +173,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/addresses/{id}', [AddressController::class, 'show']);
         Route::put('/addresses/{id}', [AddressController::class, 'update']);
         Route::delete('/addresses/{id}', [AddressController::class, 'destroy']);
+    });
+
+    // Visitor management routes (Admin only - require authentication + admin role)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/visitors', [VisitorsController::class, 'index']);
     });
 });
 

@@ -1,30 +1,6 @@
-Build an API controller (call it VisitorsController) that manages anonymous visitor tracking.
-Add endpoints:
-GET /api/visitors → return all visitors ordered by latest.
-POST /api/visitors → create or update a visitor session.
-PATCH /api/visitors/{visitor_id} → update metadata and append page visits.
-GET /api/visitors/{visitor_id} → fetch a single visitor profile.
-GET /api/visitors/analytics → return top page, section, and device stats.
-For create/update requests:
-Validate visitor_id, optional ref, device_type, browser, and page_visits array (page_name, optional section_name, in_time, out_time).
-Compute each visit’s total_duration = out_time - in_time.
-If visitor exists, increment session number and update; otherwise create with session 1.
-When updating with new page visits, append them to the existing collection before saving.
-Responses:
-JSON with success, message, and data or errors; use 200/201/404/422/500 status codes as appropriate.
-For analytics, aggregate all stored page_visits to determine most visited page, most visited section, and counts of device_type === 'mobile' vs desktop.
-Model requirements:
-Provide helpers like findByVisitorId, getLatestSessionNumber, and appendPageVisit to encapsulate DB logic.
-Ensure page_visits column can store JSON and is cast to arrays.
-Error handling:
-Wrap each operation in try/catch, return descriptive messages, and surface validation errors.
-
-
-
-here' guest will be visitors
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Visitor;
@@ -35,19 +11,52 @@ use Illuminate\Validation\ValidationException;
 class VisitorsController extends Controller
 {
     /**
-     * Get all visitors
+     * Get paginated visitors (admin only)
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $visitors = Visitor::orderBy('created_at', 'desc')->get();
+            $validated = $request->validate([
+                'per_page' => 'nullable|integer|min:1|max:100',
+                'page' => 'nullable|integer|min:1',
+                'gte_date' => 'nullable|date',
+                'lte_date' => 'nullable|date',
+            ]);
+
+            $perPage = $validated['per_page'] ?? 25;
+            $page = $validated['page'] ?? 1;
+
+            $query = Visitor::query();
+
+            if (!empty($validated['gte_date'])) {
+                $query->whereDate('created_at', '>=', $validated['gte_date']);
+            }
+
+            if (!empty($validated['lte_date'])) {
+                $query->whereDate('created_at', '<=', $validated['lte_date']);
+            }
+
+            $visitors = $query
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
             
             return response()->json([
                 'success' => true,
                 'message' => 'Visitors retrieved successfully',
-                'data' => $visitors,
-                'count' => $visitors->count()
+                'data' => $visitors->items(),
+                'meta' => [
+                    'current_page' => $visitors->currentPage(),
+                    'per_page' => $visitors->perPage(),
+                    'total' => $visitors->total(),
+                    'last_page' => $visitors->lastPage(),
+                ]
             ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -219,51 +228,57 @@ class VisitorsController extends Controller
     public function getAnalytics(): JsonResponse
     {
         try {
-            $visitors = Visitor::whereNotNull('page_visits')->get();
-            
-            $pageStats = [];
+            $visitors = Visitor::all();
+            $totalVisitors = $visitors->count();
+
             $sectionStats = [];
-            $mobileVisited = 0;
-            $desktopVisited = 0;
-            
+            $deviceStats = [];
+            $refStats = [];
+
             foreach ($visitors as $visitor) {
-                // Count device types
-                if ($visitor->device_type === 'mobile') {
-                    $mobileVisited++;
-                } elseif ($visitor->device_type === 'desktop') {
-                    $desktopVisited++;
+                // Track device type
+                if (!empty($visitor->device_type)) {
+                    $device = strtolower($visitor->device_type);
+                    $deviceStats[$device] = ($deviceStats[$device] ?? 0) + 1;
                 }
-                
+
+                // Track referrals
+                if (!empty($visitor->ref)) {
+                    $ref = strtolower($visitor->ref);
+                    $refStats[$ref] = ($refStats[$ref] ?? 0) + 1;
+                }
+
+                // Track section stats
                 if (is_array($visitor->page_visits)) {
                     foreach ($visitor->page_visits as $visit) {
-                        // Count page visits
-                        $pageName = $visit['page_name'] ?? 'unknown';
-                        $pageStats[$pageName] = ($pageStats[$pageName] ?? 0) + 1;
-                        
-                        // Count section visits
-                        if (isset($visit['section_name']) && $visit['section_name']) {
+                        if (!empty($visit['section_name'])) {
                             $sectionName = $visit['section_name'];
                             $sectionStats[$sectionName] = ($sectionStats[$sectionName] ?? 0) + 1;
                         }
                     }
                 }
             }
-            
-            // Get most visited page
-            arsort($pageStats);
-            $mostVisitedPage = array_key_first($pageStats) ?? 'none';
-            
-            // Get most visited section
-            arsort($sectionStats);
-            $mostVisitedSection = array_key_first($sectionStats) ?? 'none';
-            
+
+            $mostVisitedSection = $this->getStatSummary($sectionStats, 'none');
+            $mostVisitedDevice = $this->getStatSummary($deviceStats, 'unknown');
+            $mostCommonRef = $this->getStatSummary($refStats, 'unknown');
+
+            $repeatedVisitors = $visitors
+                ->filter(fn ($visitor) => (int) $visitor->session > 1)
+                ->map(fn ($visitor) => [
+                    'visitor_id' => $visitor->visitor_id,
+                    'session' => (int) $visitor->session,
+                ])
+                ->values();
+
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'most_visited_page' => $mostVisitedPage,
+                    'total_visitors' => $totalVisitors,
                     'most_visited_section' => $mostVisitedSection,
-                    'mobile_visited' => $mobileVisited,
-                    'desktop_visited' => $desktopVisited
+                    'most_visited_device_type' => $mostVisitedDevice,
+                    'repeated_visitors' => $repeatedVisitors,
+                    'most_common_ref' => $mostCommonRef,
                 ]
             ], 200);
             
@@ -291,4 +306,26 @@ class VisitorsController extends Controller
         }
         return $pageVisits;
     }
+
+    /**
+     * Get the top entry from a stat array with fallback
+     */
+    private function getStatSummary(array $stats, string $defaultValue): array
+    {
+        if (empty($stats)) {
+            return [
+                'value' => $defaultValue,
+                'count' => 0,
+            ];
+        }
+
+        arsort($stats);
+        $topValue = array_key_first($stats);
+
+        return [
+            'value' => $topValue,
+            'count' => $stats[$topValue] ?? 0,
+        ];
+    }
 }
+

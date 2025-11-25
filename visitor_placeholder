@@ -1,0 +1,2518 @@
+{
+    "info": {
+        "name": "Laravel 12 API - Complete Collection",
+        "description": "Complete API collection for Laravel 12 with Authentication, Categories, and Items management",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}\n\n// Alternative admin credentials:\n// {\n//     \"email\": \"admin@admin.com\",\n//     \"password\": \"password123\"\n//}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "logout"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get User",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/user",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update User",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Updated Name\",\n    \"email\": \"newemail@example.com\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/update",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "update"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/user/delete",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "delete"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Admin",
+            "item": [
+                {
+                    "name": "Dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/dashboard",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "admin",
+                                "dashboard"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get All Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/users",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "admin",
+                                "users"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get User By ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/users/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "admin",
+                                "users",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"New User\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"role\": \"user\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/users",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "admin",
+                                "users"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update User",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Updated User Name\",\n    \"email\": \"updated@example.com\",\n    \"role\": \"admin\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/users/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "admin",
+                                "users",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/users/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "admin",
+                                "users",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Categories",
+            "item": [
+                {
+                    "name": "Get All Categories (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "categories"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Category By ID (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/categories/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "categories",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Category (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Electronics\",\n    \"status\": \"published\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "categories"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Category (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Updated Category Name\",\n    \"status\": \"unpublished\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/categories/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "categories",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Category (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/categories/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "categories",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Items",
+            "item": [
+                {
+                    "name": "Get All Items (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/items",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Item (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "name",
+                                    "value": "Sample Item",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "details",
+                                    "value": "This is a sample item with detailed description",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "1",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "published",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "thumbnail",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/items",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Item Without Thumbnail (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "name",
+                                    "value": "Item Without Image",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "details",
+                                    "value": "This item has no thumbnail image",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "1",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "unpublished",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/items",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Item (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "name",
+                                    "value": "Updated Item Name",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "details",
+                                    "value": "Updated item details",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "1",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "published",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "thumbnail",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/items/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Item Name Only (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "name",
+                                    "value": "Only Name Updated",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/items/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Item (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/items/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Items By Category (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/items/by-category?has_price=1&search=burger",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "by-category"
+                            ],
+                            "query": [
+                                {
+                                    "key": "category_id",
+                                    "value": "1",
+                                    "description": "Optional: Filter by specific category ID",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "published",
+                                    "description": "Optional: Filter categories by status (published/unpublished)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "item_status",
+                                    "value": "published",
+                                    "description": "Optional: Filter items by status (published/unpublished)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "available_only",
+                                    "value": "true",
+                                    "description": "Optional: If true, only return published items",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "has_price",
+                                    "value": "1",
+                                    "description": "Optional: If 1, only return items that have prices",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "burger",
+                                    "description": "Optional: Search items by name/title",
+                                    "disabled": false
+                                }
+                            ]
+                        },
+                        "description": "Get items grouped by category. Items return 'prices' as an array. Each price object includes 'id', 'price', and 'size' (nullable string) fields."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Discounts",
+            "item": [
+                {
+                    "name": "Get All Discounts (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/discounts",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "discounts"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Discount By ID (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/discounts/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "discounts",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Discount (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"published\",\n  \"code\": \"SAVE10\",\n  \"discount_price\": 10.00\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/discounts",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "discounts"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Discount (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"unpublished\",\n  \"code\": \"SAVE20\",\n  \"discount_price\": 20.00\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/discounts/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "discounts",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Discount (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/discounts/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "discounts",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cities",
+            "item": [
+                {
+                    "name": "Get All Cities (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/cities",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cities"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get City By ID (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/cities/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cities",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create City (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Dhaka\",\n  \"status\": \"published\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cities",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cities"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update City (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Chittagong\",\n  \"status\": \"unpublished\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cities/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cities",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete City (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/cities/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cities",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Delivery Charges",
+            "item": [
+                {
+                    "name": "Get Delivery Charges (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/delivery-charges",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "delivery-charges"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Delivery Charge By ID (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/delivery-charges/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "delivery-charges",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Delivery Charge (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"city_id\": 1,\n  \"charge\": 50.00,\n  \"status\": \"published\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/delivery-charges",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "delivery-charges"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Delivery Charge (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"city_id\": 1,\n  \"charge\": 60.00,\n  \"status\": \"unpublished\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/delivery-charges/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "delivery-charges",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Delivery Charge (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/delivery-charges/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "delivery-charges",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cart",
+            "item": [
+                {
+                    "name": "Get All Carts (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/carts",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "admin",
+                                "carts"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Cart (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/cart?guest_id=guest123",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart"
+                            ],
+                            "query": [
+                                {
+                                    "key": "guest_id",
+                                    "value": "guest123",
+                                    "description": "Use guest_id OR user_id"
+                                },
+                                {
+                                    "key": "user_id",
+                                    "value": "1",
+                                    "description": "Use guest_id OR user_id",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Cart (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"guest_id\": \"guest123\",\n  \"items\": [\n    {\n      \"item_id\": 1,\n      \"item_price_id\": 1,\n      \"quantity\": 2\n    },\n    {\n      \"item_id\": 2,\n      \"item_price_id\": 3,\n      \"quantity\": 1\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Item Quantity (Public)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 1,\n  \"item_id\": 1,\n  \"item_price_id\": 1,\n  \"quantity\": 5\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/update-quantity",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "update-quantity"
+                            ]
+                        },
+                        "description": "Update quantity for a specific item in cart. item_price_id is required to identify the exact item variant."
+                    }
+                },
+                {
+                    "name": "Update Item Quantity - Guest (Public)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1,\n  \"item_price_id\": 1,\n  \"quantity\": 3\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/update-quantity",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "update-quantity"
+                            ]
+                        },
+                        "description": "Update quantity for specific item with price_id. Set quantity to 0 to remove item."
+                    }
+                },
+                {
+                    "name": "Delete Item From Cart (Public)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 1,\n  \"item_id\": 1,\n  \"item_price_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/item",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "item"
+                            ]
+                        },
+                        "description": "Delete an item completely from cart. item_price_id is required to identify the exact item variant."
+                    }
+                },
+                {
+                    "name": "Delete Item From Cart - Guest (Public)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"guest_id\": \"guest123\",\n  \"item_id\": 1,\n  \"item_price_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/item",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "item"
+                            ]
+                        },
+                        "description": "Delete item with price_id (required to identify the exact item variant)."
+                    }
+                },
+                {
+                    "name": "Apply Discount Code (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 1,\n  \"code\": \"SAVE10\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/apply-discount",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "apply-discount"
+                            ]
+                        },
+                        "description": "Apply discount code to cart. Updates all cart entries with the discount coupon and recalculates payable price."
+                    }
+                },
+                {
+                    "name": "Apply Discount Code - Guest (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"guest_id\": \"guest123\",\n  \"code\": \"SAVE10\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/apply-discount",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "apply-discount"
+                            ]
+                        },
+                        "description": "Apply discount code to guest cart."
+                    }
+                },
+                {
+                    "name": "Remove Discount Code (Public)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/remove-discount",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "remove-discount"
+                            ]
+                        },
+                        "description": "Remove discount code from cart and recalculate prices."
+                    }
+                },
+                {
+                    "name": "Remove Discount Code - Guest (Public)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"guest_id\": \"guest123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/cart/remove-discount",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "cart",
+                                "remove-discount"
+                            ]
+                        },
+                        "description": "Remove discount code from guest cart."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Contact",
+            "item": [
+                {
+                    "name": "Submit Contact (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+1-555-1234\",\n  \"subject\": \"Support request\",\n  \"message\": \"I need help with my order.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/contact",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contact"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Contacts (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/contact",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contact"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Contact By ID (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/contact/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contact",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Contact (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"resolved\",\n  \"admin_notes\": \"Issue addressed via phone call.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/contact/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contact",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Contact (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/contact/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contact",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Item Prices",
+            "item": [
+                {
+                    "name": "Create Price (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"price\": 99.99,\n  \"size\": \"Large\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/items/1/prices",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "1",
+                                "prices"
+                            ]
+                        },
+                        "description": "Create a new price for an item. 'size' is optional (nullable string)."
+                    }
+                },
+                {
+                    "name": "Create Price Without Size (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"price\": 99.99\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/items/1/prices",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "1",
+                                "prices"
+                            ]
+                        },
+                        "description": "Create price without size (size will be null)."
+                    }
+                },
+                {
+                    "name": "Update Price (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"price\": 149.99,\n  \"size\": \"Extra Large\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/items/1/prices/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "1",
+                                "prices",
+                                "1"
+                            ]
+                        },
+                        "description": "Update price. 'size' is optional (nullable string)."
+                    }
+                },
+                {
+                    "name": "Delete Price (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/items/1/prices/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "items",
+                                "1",
+                                "prices",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "MyRestaurant",
+            "item": [
+                {
+                    "name": "Get MyRestaurant (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/my-restaurant",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "my-restaurant"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create MyRestaurant (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "isShopOpen",
+                                    "value": "true",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "shop_name",
+                                    "value": "My Shop",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "shop_address",
+                                    "value": "123 Street",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "shop_details",
+                                    "value": "Great foods",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "shop_phone",
+                                    "value": "+123 456-7890",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "tax",
+                                    "value": "5.00",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "delivery_charge",
+                                    "value": "50.00",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "privacy_policy",
+                                    "value": "...",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "terms",
+                                    "value": "...",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "refund_process",
+                                    "value": "...",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "license",
+                                    "value": "AB-123",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "shop_logo",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/my-restaurant",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "my-restaurant"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update MyRestaurant (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "shop_name",
+                                    "value": "Updated Shop",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "shop_logo",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/my-restaurant/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "my-restaurant",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Addresses",
+            "item": [
+                {
+                    "name": "Create Address (Auth Required)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"city_id\": 1,\n  \"state\": \"California\",\n  \"zip_code\": \"90001\",\n  \"street_address\": \"123 Main Street\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/addresses",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "addresses"
+                            ]
+                        },
+                        "description": "Create address for authenticated user. user_id is automatically extracted from the authorization token."
+                    }
+                },
+                {
+                    "name": "Get Addresses (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/addresses",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "addresses"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Address By ID (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/addresses/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "addresses",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Address (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"state\": \"Nevada\",\n  \"zip_code\": \"89101\",\n  \"street_address\": \"456 Updated Street\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/addresses/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "addresses",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Address (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/addresses/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "addresses",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Orders",
+            "item": [
+                {
+                    "name": "Create Order - User (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 1,\n  \"cart_id\": 5,\n  \"city_id\": 1,\n  \"state\": \"California\",\n  \"zip_code\": \"90210\",\n  \"street_address\": \"123 Main Street, Apt 4B\",\n  \"phone\": \"+1-555-1234\",\n  \"email\": \"user@example.com\",\n  \"notes\": \"Please ring the doorbell\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "orders"
+                            ]
+                        },
+                        "description": "Create order for registered user. cart_id and email are required. After order creation, confirmation email is automatically sent to the provided email address using SMTP_FROM configuration. All cart items are moved to order_items table and cart is cleared."
+                    }
+                },
+                {
+                    "name": "Create Order - Guest (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"guest_id\": \"guest123\",\n  \"cart_id\": 10,\n  \"city_id\": 1,\n  \"state\": \"New York\",\n  \"zip_code\": \"10001\",\n  \"street_address\": \"456 Broadway, Suite 200\",\n  \"phone\": \"+1-555-5678\",\n  \"email\": \"guest@example.com\",\n  \"notes\": \"Call when arrived\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "orders"
+                            ]
+                        },
+                        "description": "Create order for guest user. cart_id and email are required. Confirmation email is automatically sent to the provided email address using SMTP_FROM configuration. All cart items are moved to order_items table and cart is cleared after order creation."
+                    }
+                },
+                {
+                    "name": "Create Order - User with Notes (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 2,\n  \"cart_id\": 8,\n  \"city_id\": 2,\n  \"state\": \"Texas\",\n  \"zip_code\": \"75001\",\n  \"street_address\": \"789 Oak Avenue, Building 5\",\n  \"phone\": \"+1-555-9999\",\n  \"email\": \"customer@example.com\",\n  \"notes\": \"Leave at front door. No need to ring bell.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "orders"
+                            ]
+                        },
+                        "description": "Create order with delivery notes. All address fields and email are required. Order confirmation email is automatically sent to the provided email address using SMTP_FROM configuration."
+                    }
+                },
+                {
+                    "name": "Create Order - Guest Minimal (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"guest_id\": \"guest456\",\n  \"cart_id\": 12,\n  \"city_id\": 1,\n  \"state\": \"Florida\",\n  \"zip_code\": \"33101\",\n  \"street_address\": \"100 Beach Road\",\n  \"phone\": \"+1-555-0000\",\n  \"email\": \"guest@example.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "orders"
+                            ]
+                        },
+                        "description": "Create order without notes (notes is optional). Email is required. Response includes cart_details with items, discount, charges, and payable_price. Confirmation email is automatically sent to the provided email address using SMTP_FROM configuration."
+                    }
+                },
+                {
+                    "name": "Get Order By ID (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/orders/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "orders",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "1",
+                                    "description": "Optional: Filter by user_id (for validation)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "guest_id",
+                                    "value": "guest123",
+                                    "description": "Optional: Filter by guest_id (for validation)",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Get single order by ID. NOTE: This endpoint needs to be implemented."
+                    }
+                },
+                {
+                    "name": "Get All Orders (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "orders"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "1",
+                                    "description": "Optional: Filter orders by user_id",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "guest_id",
+                                    "value": "guest123",
+                                    "description": "Optional: Filter orders by guest_id",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "pending",
+                                    "description": "Optional: Filter by status (pending, cooking, on_the_way, delivered)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Optional: Page number for pagination (default: 1)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "15",
+                                    "description": "Optional: Items per page (default: 15)",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Admin-only paginated list of orders with optional filters (user_id, guest_id, status). Every order now includes order_items plus a summary block (items_price, tax, delivery, discount, payable_total) so you can inspect the full breakdown without extra calls. Requires a valid admin token."
+                    }
+                },
+                {
+                    "name": "Update Order Status (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"cooking\",\n  \"payment_status\": \"paid\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/orders/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "orders",
+                                "1"
+                            ]
+                        },
+                        "description": "Admin-only endpoint to update an order's workflow status and/or payment status. Provide either field (or both). Uses the same status constants documented in order_api_examples.txt."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Email",
+            "item": [
+                {
+                    "name": "Send Email - Order Confirmation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"to\": \"customer@example.com\",\n  \"type\": \"order_confirmation\",\n  \"data\": {\n    \"order\": {\n      \"id\": 1,\n      \"status\": \"pending\",\n      \"total_amount\": 71.00\n    },\n    \"orderData\": {\n      \"id\": 1,\n      \"order_id\": 1,\n      \"cart_details\": {\n        \"items\": [\n          {\n            \"id\": 1,\n            \"title\": \"Sample Item\",\n            \"quantity\": 2,\n            \"price\": {\n              \"id\": 1,\n              \"price\": 10.00,\n              \"size\": \"Large\"\n            }\n          }\n        ],\n        \"items_price\": 20.00,\n        \"discount\": {\n          \"coupon\": \"SAVE10\",\n          \"amount\": 10.00\n        },\n        \"charges\": {\n          \"tax\": 5.00,\n          \"tax_price\": 1.00,\n          \"delivery_charges\": 50.00\n        },\n        \"payable_price\": 71.00\n      },\n      \"payable_amount\": 71.00,\n      \"status\": \"pending\"\n    }\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/emails/send",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "emails",
+                                "send"
+                            ]
+                        },
+                        "description": "Send order confirmation email. Requires 'order' object and 'orderData' array in data field."
+                    }
+                },
+                {
+                    "name": "Send Email - Welcome",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"to\": \"newuser@example.com\",\n  \"type\": \"welcome\",\n  \"data\": {\n    \"user\": {\n      \"name\": \"John Doe\",\n      \"email\": \"newuser@example.com\"\n    },\n    \"data\": {\n      \"message\": \"Thank you for joining us! We're excited to have you on board.\"\n    }\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/emails/send",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "emails",
+                                "send"
+                            ]
+                        },
+                        "description": "Send welcome email to new users. Requires 'user' object in data field."
+                    }
+                },
+                {
+                    "name": "Send Email - Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"to\": \"user@example.com\",\n  \"type\": \"notification\",\n  \"data\": {\n    \"title\": \"Order Status Update\",\n    \"message\": \"Your order #123 has been shipped! Track your order using the tracking number: TRACK123\",\n    \"data\": {\n      \"order_id\": 123,\n      \"tracking_number\": \"TRACK123\",\n      \"status\": \"on_the_way\"\n    }\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/emails/send",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "emails",
+                                "send"
+                            ]
+                        },
+                        "description": "Send general notification email. Requires 'title' and 'message' in data field."
+                    }
+                },
+                {
+                    "name": "Get Available Email Types",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/emails/types",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "emails",
+                                "types"
+                            ]
+                        },
+                        "description": "Get list of available email types that can be sent via the API."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Visitors",
+            "item": [
+                {
+                    "name": "Get All Visitors (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/visitors?per_page=25&page=1&gte_date=2025-11-01&lte_date=2025-11-30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "visitors"
+                            ],
+                            "query": [
+                                {
+                                    "key": "per_page",
+                                    "value": "25",
+                                    "description": "Items per page (default 25)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default 1)"
+                                },
+                                {
+                                    "key": "gte_date",
+                                    "value": "2025-11-01",
+                                    "description": "Filter visitors created on/after this date",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "lte_date",
+                                    "value": "2025-11-30",
+                                    "description": "Filter visitors created on/before this date",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Admin-only paginated visitor listing. Supports per_page, page, gte_date (from), and lte_date (to) filters. Requires Authorization header with admin token."
+                    }
+                },
+                {
+                    "name": "Create Visitor Session (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"visitor_id\": \"visitor_abc123\",\n  \"ref\": \"https://example.com\",\n  \"device_type\": \"desktop\",\n  \"browser\": \"Chrome\",\n  \"page_visits\": [\n    {\n      \"page_name\": \"/home\",\n      \"section_name\": \"hero\",\n      \"in_time\": \"2025-11-25 10:00:00\",\n      \"out_time\": \"2025-11-25 10:05:30\"\n    },\n    {\n      \"page_name\": \"/products\",\n      \"section_name\": \"featured\",\n      \"in_time\": \"2025-11-25 10:06:00\",\n      \"out_time\": \"2025-11-25 10:10:15\"\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/visitors",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "visitors"
+                            ]
+                        },
+                        "description": "Create a new visitor session or update existing visitor with new session. If visitor_id exists, it increments session number. total_duration is automatically calculated from in_time and out_time."
+                    }
+                },
+                {
+                    "name": "Create Visitor Session - Minimal (Public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"visitor_id\": \"visitor_xyz789\",\n  \"device_type\": \"mobile\",\n  \"browser\": \"Safari\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/visitors",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "visitors"
+                            ]
+                        },
+                        "description": "Create visitor session without page visits. Only visitor_id is required. Other fields are optional."
+                    }
+                },
+                {
+                    "name": "Update Visitor - Append Page Visits (Public)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"page_visits\": [\n    {\n      \"page_name\": \"/checkout\",\n      \"section_name\": \"payment\",\n      \"in_time\": \"2025-11-25 10:15:00\",\n      \"out_time\": \"2025-11-25 10:18:45\"\n    },\n    {\n      \"page_name\": \"/thank-you\",\n      \"in_time\": \"2025-11-25 10:19:00\",\n      \"out_time\": \"2025-11-25 10:20:00\"\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/visitors/visitor_abc123",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "visitors",
+                                "visitor_abc123"
+                            ]
+                        },
+                        "description": "Update visitor and append new page visits to existing ones. New visits are merged with existing page_visits array. total_duration is automatically calculated."
+                    }
+                },
+                {
+                    "name": "Update Visitor - Metadata Only (Public)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"ref\": \"https://google.com/search?q=example\",\n  \"device_type\": \"tablet\",\n  \"browser\": \"Firefox\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/visitors/visitor_abc123",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "visitors",
+                                "visitor_abc123"
+                            ]
+                        },
+                        "description": "Update visitor metadata (ref, device_type, browser) without adding page visits."
+                    }
+                },
+                {
+                    "name": "Get Visitor By ID (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/visitors/visitor_abc123",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "visitors",
+                                "visitor_abc123"
+                            ]
+                        },
+                        "description": "Get a single visitor profile by visitor_id. Returns all visitor data including page_visits array with calculated total_duration for each visit."
+                    }
+                },
+                {
+                    "name": "Get Analytics (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/visitors/analytics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "visitors",
+                                "analytics"
+                            ]
+                        },
+                        "description": "Get visitor analytics summary including: total visitors, most visited section, most visited device type, repeated visitors (visitor_id + session), and most common referral source."
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000"
+        },
+        {
+            "key": "access_token",
+            "value": ""
+        },
+        {
+            "key": "admin_token",
+            "value": ""
+        }
+    ]
+}
