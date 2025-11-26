@@ -1,0 +1,200 @@
+{
+	"info": {
+		"name": "Visitor Tracking API",
+		"description": "Postman collection for Visitor Tracking API endpoints. Includes public endpoints for creating, updating, and retrieving visitor data, as well as analytics.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Public Endpoints",
+			"item": [
+				{
+					"name": "Create Visitor Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"visitor_id\": \"visitor_abc123\",\n  \"ref\": \"https://example.com\",\n  \"device_type\": \"desktop\",\n  \"browser\": \"Chrome\",\n  \"page_visits\": [\n    {\n      \"page_name\": \"/home\",\n      \"section_name\": \"hero\",\n      \"in_time\": \"2025-11-25 10:00:00\",\n      \"out_time\": \"2025-11-25 10:05:30\"\n    },\n    {\n      \"page_name\": \"/products\",\n      \"section_name\": \"featured\",\n      \"in_time\": \"2025-11-25 10:06:00\",\n      \"out_time\": \"2025-11-25 10:10:15\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/visitors",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors"]
+						},
+						"description": "Create a new visitor session or update existing visitor with new session. If visitor_id exists, it increments session number. total_duration is automatically calculated from in_time and out_time.\n\n**Required Fields:**\n- `visitor_id` (string): Unique identifier for the visitor\n\n**Optional Fields:**\n- `ref` (string): Referral source URL\n- `device_type` (string): Device type (e.g., desktop, mobile, tablet)\n- `browser` (string): Browser name\n- `page_visits` (array): Array of page visit objects with:\n  - `page_name` (string, required): Page URL or name\n  - `section_name` (string, optional): Section name on the page\n  - `in_time` (datetime, required): Visit start time\n  - `out_time` (datetime, required): Visit end time (must be after in_time)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Visitor Session - Minimal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"visitor_id\": \"visitor_xyz789\",\n  \"device_type\": \"mobile\",\n  \"browser\": \"Safari\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/visitors",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors"]
+						},
+						"description": "Create visitor session without page visits. Only visitor_id is required. Other fields are optional. This is useful for initial visitor tracking when page visit data is not yet available."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Visitor - Append Page Visits",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page_visits\": [\n    {\n      \"page_name\": \"/checkout\",\n      \"section_name\": \"payment\",\n      \"in_time\": \"2025-11-25 10:15:00\",\n      \"out_time\": \"2025-11-25 10:18:45\"\n    },\n    {\n      \"page_name\": \"/thank-you\",\n      \"in_time\": \"2025-11-25 10:19:00\",\n      \"out_time\": \"2025-11-25 10:20:00\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/visitors/{{visitor_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors", "{{visitor_id}}"]
+						},
+						"description": "Update visitor and append new page visits to existing ones. New visits are merged with existing page_visits array. total_duration is automatically calculated from in_time and out_time.\n\n**Note:** Replace `{{visitor_id}}` with the actual visitor ID (e.g., `visitor_abc123`)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Visitor - Metadata Only",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ref\": \"https://google.com/search?q=example\",\n  \"device_type\": \"tablet\",\n  \"browser\": \"Firefox\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/visitors/{{visitor_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors", "{{visitor_id}}"]
+						},
+						"description": "Update visitor metadata (ref, device_type, browser) without adding page visits. Useful for updating referral source or device information.\n\n**Note:** Replace `{{visitor_id}}` with the actual visitor ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Visitor By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/visitors/{{visitor_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors", "{{visitor_id}}"]
+						},
+						"description": "Get a single visitor profile by visitor_id. Returns all visitor data including page_visits array with calculated total_duration for each visit.\n\n**Response includes:**\n- Visitor ID and session number\n- Referral source (ref)\n- Device type and browser\n- All page visits with calculated durations\n- Created and updated timestamps\n\n**Note:** Replace `{{visitor_id}}` with the actual visitor ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Analytics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/visitors/analytics",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors", "analytics"]
+						},
+						"description": "Get visitor analytics summary including:\n- Total visitors count\n- Most visited section (with count)\n- Most visited device type (with count)\n- Repeated visitors (visitor_id + session number)\n- Most common referral source (with count)\n\n**Response format:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"total_visitors\": 150,\n    \"most_visited_section\": {\n      \"value\": \"hero\",\n      \"count\": 45\n    },\n    \"most_visited_device_type\": {\n      \"value\": \"desktop\",\n      \"count\": 89\n    },\n    \"repeated_visitors\": [\n      {\n        \"visitor_id\": \"visitor_abc123\",\n        \"session\": 3\n      }\n    ],\n    \"most_common_ref\": {\n      \"value\": \"google.com\",\n      \"count\": 67\n    }\n  }\n}\n```"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin Endpoints",
+			"item": [
+				{
+					"name": "Get All Visitors (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/visitors?per_page=25&page=1&gte_date=2025-11-01&lte_date=2025-11-30",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "25",
+									"description": "Items per page (default: 25, max: 100)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "gte_date",
+									"value": "2025-11-01",
+									"description": "Filter visitors created on/after this date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "lte_date",
+									"value": "2025-11-30",
+									"description": "Filter visitors created on/before this date (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Admin-only paginated visitor listing. Supports filtering by date range and pagination.\n\n**Query Parameters:**\n- `per_page` (optional): Number of items per page (1-100, default: 25)\n- `page` (optional): Page number (default: 1)\n- `gte_date` (optional): Filter visitors created on/after this date (YYYY-MM-DD)\n- `lte_date` (optional): Filter visitors created on/before this date (YYYY-MM-DD)\n\n**Authentication:** Requires Bearer token with admin role.\n\n**Response includes:**\n- Paginated visitor data\n- Meta information (current_page, per_page, total, last_page)"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "visitor_id",
+			"value": "visitor_abc123",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

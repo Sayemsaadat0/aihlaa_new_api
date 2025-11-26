@@ -16,6 +16,7 @@ class OrderConfirmation extends Mailable
 
     public $order;
     public $orderData;
+    public $trackOrderUrl;
 
     /**
      * Create a new message instance.
@@ -24,6 +25,15 @@ class OrderConfirmation extends Mailable
     {
         $this->order = $order;
         $this->orderData = $orderData;
+        
+        // Generate track order URL with base64 encoded order details
+        $frontendUrl = env('FRONTEND_URL', '');
+        if ($frontendUrl) {
+            $encodedOrderDetails = base64_encode(json_encode($orderData));
+            $this->trackOrderUrl = rtrim($frontendUrl, '/') . '/track?order_details=' . urlencode($encodedOrderDetails);
+        } else {
+            $this->trackOrderUrl = '#';
+        }
     }
 
     /**
@@ -47,6 +57,7 @@ class OrderConfirmation extends Mailable
             with: [
                 'order' => $this->order,
                 'orderData' => $this->orderData,
+                'trackOrderUrl' => $this->trackOrderUrl,
             ],
         );
     }
