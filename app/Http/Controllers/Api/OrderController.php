@@ -13,6 +13,7 @@ use App\Models\Item;
 use App\Models\ItemPrice;
 use App\Mail\OrderConfirmation;
 use App\Services\EmailService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
@@ -452,6 +453,37 @@ class OrderController extends Controller
                 ]);
             }
 
+            // Call the public Twilio send API with the full order data
+            // This will send WhatsApp to the admin number configured in TWILIO_WHATSAPP_NUMBER_TO
+            try {
+                $twilioEndpoint = url('/api/twilio/send');
+
+                $twilioResponse = Http::post($twilioEndpoint, [
+                    // Pass the same structure as the order API response
+                    // TwilioController will format it into a WhatsApp message
+                    'order_data' => $response,
+                ]);
+
+                if (!$twilioResponse->successful()) {
+                    \Log::warning('Twilio /api/twilio/send call failed after order creation', [
+                        'order_id' => $order->id,
+                        'status' => $twilioResponse->status(),
+                        'body' => $twilioResponse->body(),
+                    ]);
+                } else {
+                    \Log::info('Twilio /api/twilio/send called successfully after order creation', [
+                        'order_id' => $order->id,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Log Twilio error but don't fail the order creation
+                \Log::error('Failed to call /api/twilio/send after order creation', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
             return $this->successResponse($response, 'Order created successfully', 201);
 
         } catch (ValidationException $e) {
@@ -748,6 +780,7 @@ class OrderController extends Controller
             );
         }
     }
+
 
     /**
      * Update order status or payment status (Admin only)

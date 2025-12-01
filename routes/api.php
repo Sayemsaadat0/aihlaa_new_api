@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\VisitorsController;
+use App\Http\Controllers\Api\TwilioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,6 +82,12 @@ Route::post('/visitors', [VisitorsController::class, 'store']);
 Route::get('/visitors/analytics', [VisitorsController::class, 'getAnalytics']);
 Route::patch('/visitors/{visitor_id}', [VisitorsController::class, 'update']);
 Route::get('/visitors/{visitor_id}', [VisitorsController::class, 'show']);
+
+// Public Twilio messaging routes
+Route::prefix('twilio')->group(function () {
+    Route::post('/send', [TwilioController::class, 'send']);
+    Route::post('/test', [TwilioController::class, 'test']);
+});
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {

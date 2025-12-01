@@ -1,0 +1,12 @@
+# Twilio Configuration
+TWILIO_SID=your_twilio_account_sid_here
+TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+TWILIO_WHATSAPP_TO=whatsapp:+1234567890
+
+# Notes:
+# - TWILIO_SID: Get from Twilio Console > Account > Account SID
+# - TWILIO_AUTH_TOKEN: Get from Twilio Console > Account > Auth Token
+# - TWILIO_WHATSAPP_FROM: Your Twilio WhatsApp number (sandbox or production)
+# - TWILIO_WHATSAPP_TO: Default recipient number (can be overridden in API calls)
+
