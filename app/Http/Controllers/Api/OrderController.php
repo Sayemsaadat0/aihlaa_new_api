@@ -28,10 +28,22 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         try {
+            // Custom validation: at least one of user_id or guest_id must be present
+            // This is more reliable than required_without in production environments
+            $hasUserId = $request->has('user_id') && $request->filled('user_id');
+            $hasGuestId = $request->has('guest_id') && $request->filled('guest_id');
+            
+            if (!$hasUserId && !$hasGuestId) {
+                return $this->errorResponse(
+                    'Either user_id or guest_id is required.',
+                    422
+                );
+            }
+            
             // Validate request with custom error messages
             $validated = $request->validate([
-                'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
-                'guest_id' => 'nullable|string|max:255|required_without:user_id',
+                'user_id' => 'nullable|integer|exists:users,id',
+                'guest_id' => 'nullable|string|max:255',
                 'cart_id' => 'required|integer|exists:carts,id',
                 'city_id' => 'required|integer|exists:cities,id',
                 'state' => 'required|string|max:255',
@@ -41,9 +53,7 @@ class OrderController extends Controller
                 'email' => 'required|string|email|max:255',
                 'notes' => 'nullable|string',
             ], [
-                'user_id.required_without' => 'Either user_id or guest_id is required.',
                 'user_id.exists' => 'The selected user does not exist.',
-                'guest_id.required_without' => 'Either user_id or guest_id is required.',
                 'guest_id.max' => 'Guest ID cannot exceed 255 characters.',
                 'cart_id.required' => 'Cart ID is required.',
                 'cart_id.exists' => 'The selected cart does not exist.',

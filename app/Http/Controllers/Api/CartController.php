@@ -172,9 +172,21 @@ class CartController extends Controller
     public function store(Request $request)
     {
         try {
+            // Custom validation: at least one of user_id or guest_id must be present
+            // This is more reliable than required_without in production environments
+            $hasUserId = $request->has('user_id') && $request->filled('user_id');
+            $hasGuestId = $request->has('guest_id') && $request->filled('guest_id');
+            
+            if (!$hasUserId && !$hasGuestId) {
+                return $this->errorResponse(
+                    'Either user_id or guest_id must be provided.',
+                    422
+                );
+            }
+            
             $request->validate([
-                'guest_id' => 'nullable|string|max:255|required_without:user_id',
-                'user_id' => 'nullable|integer|exists:users,id|required_without:guest_id',
+                'guest_id' => 'nullable|string|max:255',
+                'user_id' => 'nullable|integer|exists:users,id',
                 'items' => 'required|array|min:1',
                 'items.*.item_id' => 'required|integer|exists:items,id',
                 'items.*.item_price_id' => 'required|integer|exists:item_prices,id',
