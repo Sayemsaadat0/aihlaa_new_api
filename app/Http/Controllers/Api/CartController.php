@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\Discount;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class CartController extends Controller
 {
@@ -171,6 +173,7 @@ class CartController extends Controller
      */
     public function store(Request $request)
     {
+        DB::beginTransaction();
         try {
             // Custom validation: at least one of user_id or guest_id must be present
             // This is more reliable than required_without in production environments
@@ -178,6 +181,7 @@ class CartController extends Controller
             $hasGuestId = $request->has('guest_id') && $request->filled('guest_id');
             
             if (!$hasUserId && !$hasGuestId) {
+                DB::rollBack();
                 return $this->errorResponse(
                     'Either user_id or guest_id must be provided.',
                     422
@@ -193,12 +197,16 @@ class CartController extends Controller
                 'items.*.quantity' => 'nullable|integer|min:1',
             ]);
 
+            // Normalize guest_id and user_id - ensure only one is set
+            $userId = $request->filled('user_id') ? (int) $request->user_id : null;
+            $guestId = $request->filled('guest_id') ? (string) $request->guest_id : null;
+
             // Get existing cart items for user/guest
-            $cartQuery = Cart::where(function ($query) use ($request) {
-                if ($request->filled('user_id')) {
-                    $query->where('user_id', $request->user_id)->whereNull('guest_id');
+            $cartQuery = Cart::where(function ($query) use ($userId, $guestId) {
+                if ($userId) {
+                    $query->where('user_id', $userId)->whereNull('guest_id');
                 } else {
-                    $query->where('guest_id', $request->guest_id)->whereNull('user_id');
+                    $query->where('guest_id', $guestId)->whereNull('user_id');
                 }
             });
             $existingCarts = $cartQuery->get();
@@ -216,6 +224,7 @@ class CartController extends Controller
                 // Check if item exists
                 $itemModel = Item::find($itemId);
                 if (!$itemModel) {
+                    DB::rollBack();
                     return $this->errorResponse(
                         "Item with ID {$itemId} does not exist (at index {$index})",
                         404
@@ -228,6 +237,7 @@ class CartController extends Controller
                     ->first();
 
                 if (!$price) {
+                    DB::rollBack();
                     return $this->errorResponse(
                         "Price with ID {$priceId} does not belong to item with ID {$itemId} (at index {$index})",
                         422
@@ -244,28 +254,44 @@ class CartController extends Controller
                 if ($existingCartItem) {
                     // Item already exists - increase quantity by adding more cart entries
                     for ($i = 0; $i < $quantity; $i++) {
-                        $newCart = Cart::create([
-                            'guest_id' => $request->guest_id,
-                            'user_id' => $request->user_id,
-                            'item_id' => $itemId,
-                            'price_id' => $priceId,
-                            'discount_coupon' => $existingCartItem->discount_coupon, // Preserve discount if exists
-                            'payable_price' => $itemPriceValue,
-                        ]);
-                        $newCartsCreated[] = $newCart;
+                        try {
+                            $newCart = Cart::create([
+                                'guest_id' => $guestId,
+                                'user_id' => $userId,
+                                'item_id' => $itemId,
+                                'price_id' => $priceId,
+                                'discount_coupon' => $existingCartItem->discount_coupon, // Preserve discount if exists
+                                'payable_price' => $itemPriceValue,
+                            ]);
+                            $newCartsCreated[] = $newCart;
+                        } catch (\Exception $e) {
+                            DB::rollBack();
+                            return $this->errorResponse(
+                                "Failed to create cart entry for item ID {$itemId} (at index {$index}): " . $e->getMessage(),
+                                500
+                            );
+                        }
                     }
                 } else {
                     // New item - create cart entries
                     for ($i = 0; $i < $quantity; $i++) {
-                        $newCart = Cart::create([
-                            'guest_id' => $request->guest_id,
-                            'user_id' => $request->user_id,
-                            'item_id' => $itemId,
-                            'price_id' => $priceId,
-                            'discount_coupon' => null,
-                            'payable_price' => $itemPriceValue,
-                        ]);
-                        $newCartsCreated[] = $newCart;
+                        try {
+                            $newCart = Cart::create([
+                                'guest_id' => $guestId,
+                                'user_id' => $userId,
+                                'item_id' => $itemId,
+                                'price_id' => $priceId,
+                                'discount_coupon' => null,
+                                'payable_price' => $itemPriceValue,
+                            ]);
+                            $newCartsCreated[] = $newCart;
+                        } catch (\Exception $e) {
+                            DB::rollBack();
+                            return $this->errorResponse(
+                                "Failed to create cart entry for item ID {$itemId} (at index {$index}): " . $e->getMessage(),
+                                500
+                            );
+                        }
                     }
                 }
 
@@ -291,7 +317,15 @@ class CartController extends Controller
             $payablePrice = $itemsPrice + $taxPrice + $deliveryCharge;
 
             // Get all cart items (existing + newly created) for the response
-            $allCarts = $cartQuery->get();
+            // Rebuild the query since it was already executed earlier
+            $allCartsQuery = Cart::where(function ($query) use ($userId, $guestId) {
+                if ($userId) {
+                    $query->where('user_id', $userId)->whereNull('guest_id');
+                } else {
+                    $query->where('guest_id', $guestId)->whereNull('user_id');
+                }
+            });
+            $allCarts = $allCartsQuery->get();
 
             // Return summary similar to GET response (group items by item_id and price_id)
             $groupedItems = [];
@@ -360,10 +394,12 @@ class CartController extends Controller
             // Get first cart ID as the cart group identifier
             $firstCartId = $allCarts->first()->id ?? null;
 
+            DB::commit();
+
             return $this->successResponse([
                 'id' => $firstCartId,
-                'guest_id' => $request->input('guest_id', ''),
-                'user_id' => $request->input('user_id', ''),
+                'guest_id' => $guestId ?? '',
+                'user_id' => $userId ?? '',
                 'items' => $items,
                 'items_price' => round($totalItemsPrice, 2),
                 'discount' => [
@@ -378,8 +414,24 @@ class CartController extends Controller
                 'payable_price' => round($payablePrice, 2),
             ], 'Cart updated successfully', 200);
         } catch (ValidationException $e) {
+            DB::rollBack();
             return $this->validationErrorResponse($e);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            // Handle database errors
+            $errorCode = $e->getCode();
+            if ($errorCode == 23000) { // Integrity constraint violation
+                return $this->errorResponse(
+                    'Database integrity error: The cart could not be created due to data constraints. Please check your input and try again.',
+                    422
+                );
+            }
+            return $this->errorResponse(
+                'Database error occurred while creating the cart. Please try again or contact support if the problem persists. Error: ' . $e->getMessage(),
+                500
+            );
         } catch (\Exception $e) {
+            DB::rollBack();
             return $this->errorResponse(
                 'Failed to create cart: ' . $e->getMessage(),
                 500

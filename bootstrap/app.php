@@ -17,8 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Apply JSON parsing middleware to all API routes
+        // Apply CORS middleware globally to handle cross-origin requests
+        $middleware->web(prepend: [
+            \App\Http\Middleware\HandleCors::class,
+        ]);
+        
         $middleware->api(prepend: [
+            \App\Http\Middleware\HandleCors::class,
             \App\Http\Middleware\EnsureJsonParsing::class,
         ]);
         
