@@ -21,6 +21,7 @@ return [
 
     'allowed_origins' => [
         'https://ahlamahashi-fe-pe.vercel.app',
+        'https://aihlaamahashi.com',
         'http://localhost:3000',
         'http://localhost:5173',
         'http://127.0.0.1:3000',
