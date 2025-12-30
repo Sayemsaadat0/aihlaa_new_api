@@ -97,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user/update', [AuthController::class, 'update']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::delete('/user/delete', [AuthController::class, 'delete']);
 
     // Admin routes (require admin role)

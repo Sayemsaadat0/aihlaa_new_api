@@ -236,9 +236,9 @@
                             <div class="order-item">
                                 <div class="item-details">
                                     <div class="item-name">{{ $item['title'] }}</div>
-                                    <div class="item-meta">{{ $item['quantity'] }} × ${{ number_format($item['price']['price'], 2) }}</div>
+                                    <div class="item-meta">{{ $item['quantity'] }} × {{ number_format($item['price']['price'], 2) }} AED</div>
                                 </div>
-                                <div class="item-price">${{ number_format($item['quantity'] * $item['price']['price'], 2) }}</div>
+                                <div class="item-price">{{ number_format($item['quantity'] * $item['price']['price'], 2) }} AED</div>
                             </div>
                         @endforeach
                     @else
@@ -252,25 +252,25 @@
                 <div class="section-title">Summary</div>
                 <div class="summary-row">
                     <span class="summary-label">Items</span>
-                    <span class="summary-value">${{ number_format($orderData['cart_details']['items_price'] ?? 0, 2) }}</span>
+                    <span class="summary-value">{{ number_format($orderData['cart_details']['items_price'] ?? 0, 2) }} AED</span>
                 </div>
                 @if(isset($orderData['cart_details']['discount']['amount']) && $orderData['cart_details']['discount']['amount'] > 0)
                     <div class="summary-row">
                         <span class="summary-label">Discount ({{ $orderData['cart_details']['discount']['coupon'] }})</span>
-                        <span class="summary-value">-${{ number_format($orderData['cart_details']['discount']['amount'], 2) }}</span>
+                        <span class="summary-value">-{{ number_format($orderData['cart_details']['discount']['amount'], 2) }} AED</span>
                     </div>
                 @endif
                 <div class="summary-row">
                     <span class="summary-label">Tax</span>
-                    <span class="summary-value">${{ number_format($orderData['cart_details']['charges']['tax_price'] ?? 0, 2) }}</span>
+                    <span class="summary-value">{{ number_format($orderData['cart_details']['charges']['tax_price'] ?? 0, 2) }} AED</span>
                 </div>
                 <div class="summary-row">
                     <span class="summary-label">Delivery</span>
-                    <span class="summary-value">${{ number_format($orderData['cart_details']['charges']['delivery_charges'] ?? 0, 2) }}</span>
+                    <span class="summary-value">{{ number_format($orderData['cart_details']['charges']['delivery_charges'] ?? 0, 2) }} AED</span>
                 </div>
                 <div class="summary-row total">
                     <span class="summary-label">Total</span>
-                    <span class="summary-value">${{ number_format($orderData['payable_amount'] ?? 0, 2) }}</span>
+                    <span class="summary-value">{{ number_format($orderData['payable_amount'] ?? 0, 2) }} AED</span>
                 </div>
             </div>
 

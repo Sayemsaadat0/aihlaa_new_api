@@ -193,6 +193,52 @@ class AuthController extends Controller
     }
 
     /**
+     * Change password for authenticated user
+     */
+    public function changePassword(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $request->validate([
+                'previous_password' => 'required|string',
+                'new_password' => 'required|string|min:8',
+                'confirm_password' => 'required|string|same:new_password',
+            ]);
+
+            // Verify previous password
+            if (!Hash::check($request->previous_password, $user->password)) {
+                return $this->errorResponse(
+                    'The previous password is incorrect.',
+                    422
+                );
+            }
+
+            // Check if new password is different from previous password
+            if (Hash::check($request->new_password, $user->password)) {
+                return $this->errorResponse(
+                    'The new password must be different from your current password.',
+                    422
+                );
+            }
+
+            // Update password
+            $user->update([
+                'password' => Hash::make($request->new_password),
+            ]);
+
+            return $this->successResponse(null, 'Password changed successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to change password: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
      * Delete authenticated user
      */
     public function delete(Request $request)

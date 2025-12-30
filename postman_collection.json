@@ -1,5 +1,5 @@
 {
-	"info": {
+	"info0": {
 		"name": "Laravel 12 API - Complete Collection",
 		"description": "Complete API collection for Laravel 12 with Authentication, Categories, and Items management",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"

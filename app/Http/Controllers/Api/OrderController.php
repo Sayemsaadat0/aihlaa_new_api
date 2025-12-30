@@ -51,6 +51,7 @@ class OrderController extends Controller
                 'street_address' => 'required|string',
                 'phone' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255',
+                'name' => 'required|string|max:255',
                 'notes' => 'nullable|string',
             ], [
                 'user_id.exists' => 'The selected user does not exist.',
@@ -69,6 +70,8 @@ class OrderController extends Controller
                 'email.required' => 'Email address is required for order confirmation.',
                 'email.email' => 'Please provide a valid email address.',
                 'email.max' => 'Email cannot exceed 255 characters.',
+                'name.required' => 'Name is required.',
+                'name.max' => 'Name cannot exceed 255 characters.',
             ]);
 
             DB::beginTransaction();
@@ -255,6 +258,7 @@ class OrderController extends Controller
                     'payment_status' => Order::PAYMENT_STATUS_UNPAID,
                     'phone' => $request->phone,
                     'email' => $email,
+                    'name' => $request->name,
                     'notes' => $request->notes,
                 ]);
             } catch (\Exception $e) {
@@ -423,6 +427,7 @@ class OrderController extends Controller
                 ] : null,
                 'cart_details' => $cartDetails,
                 'phone' => $order->phone,
+                'name' => $order->name,
                 'city_id' => $order->city_id,
                 'city_details' => $order->city ? [
                     'id' => $order->city->id,
@@ -625,6 +630,7 @@ class OrderController extends Controller
                 'cart_details' => $cartDetails,
                 'phone' => $order->phone,
                 'email' => $order->email,
+                'name' => $order->name,
                 'city_id' => $order->city_id,
                 'city_details' => $order->city ? [
                     'id' => $order->city->id,
@@ -735,6 +741,7 @@ class OrderController extends Controller
                     'payment_status' => $order->payment_status,
                     'phone' => $order->phone,
                     'email' => $order->email,
+                    'name' => $order->name,
                     'notes' => $order->notes,
                     'created_at' => $order->created_at?->toDateTimeString(),
                     'updated_at' => $order->updated_at?->toDateTimeString(),
