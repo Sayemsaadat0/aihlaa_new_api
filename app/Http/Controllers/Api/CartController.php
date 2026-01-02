@@ -9,6 +9,7 @@ use App\Models\ItemPrice;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Models\Discount;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
@@ -122,7 +123,8 @@ class CartController extends Controller
                     ->first();
                 
                 if ($discount) {
-                    $discountAmount = (float) $discount->discount_price;
+                    // Calculate discount as percentage of items price
+                    $discountAmount = ($itemsPrice * (float) $discount->discount_percent) / 100;
                     // Ensure discount doesn't exceed total (items_price + tax_price + delivery_charge)
                     $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
                     if ($discountAmount > $totalBeforeDiscount) {
@@ -378,7 +380,8 @@ class CartController extends Controller
                     ->first();
                 
                 if ($discount) {
-                    $discountAmount = (float) $discount->discount_price;
+                    // Calculate discount as percentage of items price
+                    $discountAmount = ($totalItemsPrice * (float) $discount->discount_percent) / 100;
                     $totalBeforeDiscount = $totalItemsPrice + $taxPrice + $deliveryCharge;
                     if ($discountAmount > $totalBeforeDiscount) {
                         $discountAmount = $totalBeforeDiscount;
@@ -877,7 +880,7 @@ class CartController extends Controller
      * @param string $message
      * @return JsonResponse
      */
-    private function getUpdatedCartSummary($userId, $guestId, $message)
+    private function getUpdatedCartSummary($userId, $guestId, $message): JsonResponse
     {
         try {
             $query = Cart::with(['item', 'price']);
@@ -975,7 +978,8 @@ class CartController extends Controller
                     ->first();
                 
                 if ($discount) {
-                    $discountAmount = (float) $discount->discount_price;
+                    // Calculate discount as percentage of items price
+                    $discountAmount = ($itemsPrice * (float) $discount->discount_percent) / 100;
                     // Ensure discount doesn't exceed total (items_price + tax_price + delivery_charge)
                     $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
                     if ($discountAmount > $totalBeforeDiscount) {
@@ -1116,7 +1120,8 @@ class CartController extends Controller
                         ->first();
                     
                     if ($discount) {
-                        $discountAmount = (float) $discount->discount_price;
+                        // Calculate discount as percentage of items price
+                        $discountAmount = ($itemsPrice * (float) $discount->discount_percent) / 100;
                         $totalBeforeDiscount = $itemsPrice + ($itemsPrice * $taxPercentage / 100) + $deliveryCharge;
                         if ($discountAmount > $totalBeforeDiscount) {
                             $discountAmount = $totalBeforeDiscount;

@@ -210,6 +210,15 @@ class OrderController extends Controller
                 );
             }
 
+            // Check if shop is open
+            if (!$restaurant->isShopOpen) {
+                DB::rollBack();
+                return $this->errorResponse(
+                    'The shop is currently closed. Please try again when the shop is open.',
+                    403
+                );
+            }
+
             $taxPercentage = (float) $restaurant->tax;
             $deliveryCharge = (float) $restaurant->delivery_charge;
 
@@ -224,7 +233,8 @@ class OrderController extends Controller
                     ->first();
                 
                 if ($discount) {
-                    $discountAmount = (float) $discount->discount_price;
+                    // Calculate discount as percentage of items price
+                    $discountAmount = ($itemsPrice * (float) $discount->discount_percent) / 100;
                     // Ensure discount doesn't exceed total (items_price + tax_price + delivery_charge)
                     $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
                     if ($discountAmount > $totalBeforeDiscount) {
@@ -383,7 +393,8 @@ class OrderController extends Controller
                     ->first();
                 
                 if ($discount) {
-                    $discountAmount = (float) $discount->discount_price;
+                    // Calculate discount as percentage of items price
+                    $discountAmount = ($itemsPrice * (float) $discount->discount_percent) / 100;
                     $totalBeforeDiscount = $itemsPrice + $taxPrice + $deliveryCharge;
                     if ($discountAmount > $totalBeforeDiscount) {
                         $discountAmount = $totalBeforeDiscount;

@@ -61,13 +61,13 @@ class DiscountController extends Controller
             $request->validate([
                 'status' => 'required|in:published,unpublished',
                 'code' => 'required|string|max:255|unique:discounts,code',
-                'discount_price' => 'required|numeric|min:0|max:99999999.99',
+                'discount_percent' => 'required|numeric|min:0|max:100',
             ]);
 
             $discount = Discount::create([
                 'status' => $request->status,
                 'code' => $request->code,
-                'discount_price' => $request->discount_price,
+                'discount_percent' => (int) $request->discount_percent,
             ]);
 
             return $this->successResponse([
@@ -98,7 +98,7 @@ class DiscountController extends Controller
             $request->validate([
                 'status' => 'sometimes|in:published,unpublished',
                 'code' => 'sometimes|string|max:255|unique:discounts,code,' . $id,
-                'discount_price' => 'sometimes|numeric|min:0|max:99999999.99',
+                'discount_percent' => 'sometimes|numeric|min:0|max:100',
             ]);
 
             $updateData = [];
@@ -111,8 +111,8 @@ class DiscountController extends Controller
                 $updateData['code'] = $request->code;
             }
             
-            if ($request->has('discount_price')) {
-                $updateData['discount_price'] = $request->discount_price;
+            if ($request->has('discount_percent')) {
+                $updateData['discount_percent'] = (int) $request->discount_percent;
             }
 
             if (empty($updateData)) {

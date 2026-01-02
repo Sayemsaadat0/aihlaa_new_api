@@ -23,7 +23,7 @@ class Discount extends Model
     protected $fillable = [
         'status',
         'code',
-        'discount_price',
+        'discount_percent',
     ];
 
     /**
@@ -35,7 +35,7 @@ class Discount extends Model
     {
         return [
             'status' => 'string',
-            'discount_price' => 'decimal:2',
+            'discount_percent' => 'integer',
         ];
     }
 }
